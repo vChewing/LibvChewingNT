@@ -34,7 +34,7 @@ namespace LibvChewing {
 /// 目前僅針對輸入法原廠語彙資料檔案使用 plist 格式。
 /// </summary>
 // 000
-public struct LMCoreNS {
+public struct LMCoreNS : LanguageModel {
   /// <summary>
   /// 資料庫辭典。索引內容為經過加密的注音字串，資料內容則為 UTF8 資料陣列。
   /// </summary>
@@ -72,8 +72,10 @@ public struct LMCoreNS {
   /// 將資料從檔案讀入至資料庫陣列內。
   /// </summary>
   /// <param name="path">給定路徑。</param>
+  /// <param name="reopen">是否重新載入。</param>
   /// <returns>是否成功載入資料。</returns>
-  public bool Open(string path) {
+  public bool Open(string path, bool reopen = false) {
+    if (reopen) Close();
     if (IsLoaded) return false;
     try {
       Stream theStream = File.OpenRead(path);
@@ -98,11 +100,11 @@ public struct LMCoreNS {
   /// <summary>
   /// 根據給定的讀音索引鍵，來獲取資料庫陣列內的對應資料陣列的 UTF8 資料、就地分析、生成單元圖陣列。
   /// </summary>
-  /// <param name="strKey">讀音索引鍵。</param>
+  /// <param name="key">讀音索引鍵。</param>
   /// <returns>單元圖陣列。</returns>
-  public List<Unigram> UnigramsFor(string strKey) {
+  public List<Unigram> UnigramsFor(string key) {
     List<Unigram> grams = new();
-    string strKeyEncrypted = Tools.CnvPhonabet2ASCII(strKey);
+    string strKeyEncrypted = Tools.CnvPhonabet2ASCII(key);
     if (!_rangeMap.ContainsKey(strKeyEncrypted)) return grams;
     ArrayNode arrRecords = _rangeMap[strKeyEncrypted] as ArrayNode ?? new();
     if (arrRecords.Count == 0) return grams;
@@ -124,20 +126,28 @@ public struct LMCoreNS {
           strValue = arrNeta[0];
           break;
       }
-      Unigram theGram = new(new(strKey, strValue), dblScore);
+      Unigram theGram = new(new(key, strValue), dblScore);
       grams.Add(theGram);
     }
     return grams;
   }
 
   /// <summary>
+  /// 【已作廢】根據給定的讀音索引鍵與前述讀音索引鍵，生成雙單元圖陣列。
+  /// </summary>
+  /// <param name="key">讀音索引鍵。</param>
+  /// <param name="precedingKey">前述讀音索引鍵。</param>
+  /// <returns>雙元圖陣列。</returns>
+  public List<Bigram> BigramsForKeys(string precedingKey, string key) { return new(); }
+
+  /// <summary>
   /// 根據給定的讀音索引鍵來確認資料庫陣列內是否存在對應的資料。
   /// </summary>
-  /// <param name="strKey">讀音索引鍵。</param>
+  /// <param name="key">讀音索引鍵。</param>
   /// <returns>是否在庫。</returns>
-  public bool HasUnigramsFor(string strKey) {
-    if (_rangeMap.ContainsKey(Tools.CnvPhonabet2ASCII(strKey))) {
-      return _rangeMap[Tools.CnvPhonabet2ASCII(strKey)] is ArrayNode;
+  public bool HasUnigramsFor(string key) {
+    if (_rangeMap.ContainsKey(Tools.CnvPhonabet2ASCII(key))) {
+      return _rangeMap[Tools.CnvPhonabet2ASCII(key)] is ArrayNode;
     }
     return false;
   }

@@ -31,7 +31,7 @@ namespace LibvChewing {
 /// 目前僅針對輸入法使用者語彙資料檔案使用 txt 格式。
 /// </summary>
 // 000
-public struct LMCore {
+public struct LMCore : LanguageModel {
   /// <summary>
   /// 資料庫辭典。索引內容為注音字串，資料內容則為單元圖陣列。
   /// </summary>
@@ -80,8 +80,10 @@ public struct LMCore {
   /// 將資料從檔案讀入至資料庫陣列內。
   /// </summary>
   /// <param name="path">給定路徑。</param>
+  /// <param name="reopen">是否重新載入。</param>
   /// <returns>是否成功載入資料。</returns>
-  public bool Open(string path) {
+  public bool Open(string path, bool reopen = false) {
+    if (reopen) Close();
     if (IsLoaded) return false;
     if (_shouldConsolidate) {
       LMConsolidator.FixEOF(path);
@@ -128,16 +130,24 @@ public struct LMCore {
   /// <summary>
   /// 根據給定的讀音索引鍵，來獲取資料庫陣列內的對應資料陣列的 UTF8 資料、就地分析、生成單元圖陣列。
   /// </summary>
-  /// <param name="strKey">讀音索引鍵。</param>
+  /// <param name="key">讀音索引鍵。</param>
   /// <returns>單元圖陣列。</returns>
-  public List<Unigram> UnigramsFor(string strKey) { return _rangeMap.ContainsKey(strKey) ? _rangeMap[strKey] : new(); }
+  public List<Unigram> UnigramsFor(string key) { return _rangeMap.ContainsKey(key) ? _rangeMap[key] : new(); }
+
+  /// <summary>
+  /// 【已作廢】根據給定的讀音索引鍵與前述讀音索引鍵，生成雙單元圖陣列。
+  /// </summary>
+  /// <param name="key">讀音索引鍵。</param>
+  /// <param name="precedingKey">前述讀音索引鍵。</param>
+  /// <returns>雙元圖陣列。</returns>
+  public List<Bigram> BigramsForKeys(string precedingKey, string key) { return new(); }
 
   /// <summary>
   /// 根據給定的讀音索引鍵來確認資料庫陣列內是否存在對應的資料。
   /// </summary>
-  /// <param name="strKey">讀音索引鍵。</param>
+  /// <param name="key">讀音索引鍵。</param>
   /// <returns>是否在庫。</returns>
-  public bool HasUnigramsFor(string strKey) => _rangeMap.ContainsKey(strKey);
+  public bool HasUnigramsFor(string key) => _rangeMap.ContainsKey(key);
 
   /// <summary>
   /// 內部限定工具函式，分析給定的 string 然後取出裡面的 double 數值。否則返回 _defaultScore 的數值。

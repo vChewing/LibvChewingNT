@@ -22,12 +22,13 @@ IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN
 CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 */
 
+using System.Text;
 using Megrez;
 
 namespace LibvChewing.Tests {
 public class LangModelTests {
   [Test]
-  public void SubComponentTests() {
+  public void A_SubComponentTests() {
     LMConsolidator.ShowDebugOutput = false;
     Console.WriteLine("// 開始測試各項子語言模組。");
     LMCoreNSTest();
@@ -35,6 +36,47 @@ public class LangModelTests {
     LMCoreTestWithReversedParameters();
     LMReplacementsTest();
     LMAssociatesTest();
+    LMConsolidator.ShowDebugOutput = true;
+  }
+
+  [Test]
+  public void B_LMInstantiatorTest() {
+    LMConsolidator.ShowDebugOutput = false;
+    Console.WriteLine("// 開始測試「語言模組副本化模組」，先測試資料載入：");
+    LMInstantiator lmiTest = new();
+    lmiTest.isPhraseReplacementEnabled = false;
+    lmiTest.isCNSEnabled = true;
+    lmiTest.isSymbolEnabled = true;
+    lmiTest.LoadLanguageModel(path: "../../../files4test/data-test.plist");
+    lmiTest.LoadCNSData(path: "../../../files4test/data-test.plist");
+    lmiTest.LoadSymbolData(path: "../../../files4test/data-test.plist");
+    lmiTest.LoadMiscData(path: "../../../files4test/data-test.plist");
+    lmiTest.LoadUserPhrasesData(path: "../../../files4test/userdata-test.txt",
+                                filterPath: "../../../files4test/exclude-phrases-test.txt");
+    lmiTest.LoadUserSymbolData(path: "../../../files4test/usersymbolphrases-test.txt");
+    lmiTest.LoadUserAssociatesData(path: "../../../files4test/associatedPhrases-test.txt");
+    lmiTest.LoadUserReplacementsData(path: "../../../files4test/phrases-replacement-test.txt");
+    string currentStat = lmiTest.DataLoadingStatistics().ToString();
+    string expectedCurrentStat = " - 原廠資料：字詞 2, 注音文 2, 全字庫 2, 符號 2\n";
+    expectedCurrentStat += " - 自訂資料：字詞 4, 濾除表 1, 置換項 1, 符號 2, 聯想 1";
+    Console.WriteLine(currentStat);
+    Assert.That(currentStat, Is.EqualTo(expectedCurrentStat));
+    // 測試語彙置換
+    string key1 = "ㄕㄨˋ-ㄒㄧㄣ-ㄈㄥ";
+    string result1 = "", result2 = "";
+    if (lmiTest.HasUnigramsFor(key1)) {
+      result1 = lmiTest.UnigramsFor(key1)[0].KeyValue.Value;
+      lmiTest.isPhraseReplacementEnabled = true;
+      result2 = lmiTest.UnigramsFor(key1)[0].KeyValue.Value;
+      lmiTest.isPhraseReplacementEnabled = false;
+    }
+    Console.WriteLine($" - 測試語彙替換：{result1} => {result2}");
+    Assert.That(result2, Is.EqualTo("🌳🆕🐝"));
+    // 測試語彙濾除
+    string key2 = "ㄋㄧㄢˊ-ㄓㄨㄥ";
+    result1 = lmiTest.HasUnigramsFor(key2) ? lmiTest.UnigramsFor(key2)[0].KeyValue.Value : "";
+    Console.WriteLine($" - 測試語彙過濾，過濾後還剩：{result1}");
+    Assert.That(result1, Is.Not.EqualTo("年中"));
     LMConsolidator.ShowDebugOutput = true;
   }
 

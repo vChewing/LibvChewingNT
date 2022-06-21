@@ -52,8 +52,10 @@ public struct LMReplacements {
   /// 將資料從檔案讀入至資料庫陣列內。
   /// </summary>
   /// <param name="path">給定路徑。</param>
+  /// <param name="reopen">是否重新載入。</param>
   /// <returns>是否成功載入資料。</returns>
-  public bool Open(string path) {
+  public bool Open(string path, bool reopen = false) {
+    if (reopen) Close();
     if (IsLoaded) return false;
     LMConsolidator.FixEOF(path);
     LMConsolidator.Consolidate(path, shouldCheckPragma: true);
@@ -93,17 +95,17 @@ public struct LMReplacements {
   // MARK: - Advanced features
 
   /// <summary>
-  /// 根據給定的讀音索引鍵，來獲取資料庫陣列內的對應資料陣列的 UTF8 資料、就地分析、生成單元圖陣列。
+  /// 根據給定的索引鍵，來尋得對應的置換結果。
   /// </summary>
-  /// <param name="strKey">讀音索引鍵。</param>
-  /// <returns>單元圖陣列。</returns>
-  public string EntryFor(string strKey) { return _rangeMap.ContainsKey(strKey) ? _rangeMap[strKey] : ""; }
+  /// <param name="key">索引鍵。</param>
+  /// <returns>要質換成的詞。</returns>
+  public string EntryFor(string key) { return _rangeMap.ContainsKey(key) ? _rangeMap[key] : ""; }
 
   /// <summary>
-  /// 根據給定的讀音索引鍵來確認資料庫陣列內是否存在對應的資料。
+  /// 根據給定的索引鍵來確認資料庫陣列內是否存在對應的資料。
   /// </summary>
-  /// <param name="strKey">讀音索引鍵。</param>
+  /// <param name="key">索引鍵。</param>
   /// <returns>是否在庫。</returns>
-  public bool HasEntryFor(string strKey) => _rangeMap.ContainsKey(strKey);
+  public bool HasEntryFor(string key) => _rangeMap.ContainsKey(key);
 }
 }
