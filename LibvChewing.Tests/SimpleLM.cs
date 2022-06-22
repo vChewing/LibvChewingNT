@@ -136,18 +136,18 @@ jiang3 蔣 -10.127828
 nian2 黏 -11.336864
 nian2 粘 -11.285740
 jiang3 槳 -12.492933
-gong1si1 公司 -6.299461
-ke1ji4 科技 -6.736613
-ji4gong1 濟公 -13.336653
-jiang3jin1 獎金 -10.344678
-nian2zhong1 年終 -11.668947
-nian2zhong1 年中 -11.373044
-gao1ke1ji4 高科技 -9.842421
-zhe4yang4 這樣 -6.000000 // Non-LibTaBE
-ni3zhe4 你這 -9.000000 // Non-LibTaBE
+gong1-si1 公司 -6.299461
+ke1-ji4 科技 -6.736613
+ji4-gong1 濟公 -13.336653
+jiang3-jin1 獎金 -10.344678
+nian2-zhong1 年終 -11.668947
+nian2-zhong1 年中 -11.373044
+gao1-ke1-ji4 高科技 -9.842421
+zhe4-yang4 這樣 -6.000000 // Non-LibTaBE
+ni3-zhe4 你這 -9.000000 // Non-LibTaBE
 jiao4 教 -3.676169
 jiao4 較 -3.24869962
-jiao4yu4 教育 -3.32220565
+jiao4-yu4 教育 -3.32220565
 yu4 育 -3.30192952
   ";
 }

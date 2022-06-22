@@ -31,7 +31,7 @@ public class LMUserOverrideTests {
     // 這次不是要測試 Megrez，而是要測試 LMUserOverride，所以先弄個簡化的情形。
     Console.Write("// 開始測試半衰記憶模組，正在準備……");
     SimpleLM lmTestInput = new(Shared.StrSampleData);
-    Compositor theCompositor = new(lmTestInput);
+    Compositor theCompositor = new(lmTestInput, separator: "-");
 
     // 模擬輸入法的行為，每次敲字或選字都重新 walk。;
     theCompositor.InsertReadingAtCursor("gao1");
@@ -58,11 +58,40 @@ public class LMUserOverrideTests {
     // MARK: - 開始測試半衰模組。
     LMUserOverride.ShowDebugOutput = false;
     LMUserOverride uom = new();
+    string strResult = " - 拿到不同的建議結果：";
+
+    // 有些詞需要觀測兩遍才會被建議。
     uom.Observe(walked, theCompositor.CursorIndex, "獎金", DateTime.Now.Ticks);
-    string result =
+    uom.Observe(walked, theCompositor.CursorIndex, "獎金", DateTime.Now.Ticks);
+    List<Unigram> arrResult =
         uom.Suggest(walkedAnchors: walked, cursorIndex: theCompositor.CursorIndex, timestamp: DateTime.Now.Ticks);
-    Console.WriteLine(" - 拿到的建議結果：{0}", result);
-    Assert.That(result, Is.EqualTo("獎金"));
+    strResult += arrResult.Aggregate("", (current, neta) => current + " " + neta.KeyValue.Value);
+    foreach (Unigram unigram in arrResult) Console.WriteLine(unigram);
+
+    theCompositor.CursorIndex = 2;
+    uom.Observe(walked, theCompositor.CursorIndex, "高科技", DateTime.Now.Ticks);
+    arrResult =
+        uom.Suggest(walkedAnchors: walked, cursorIndex: theCompositor.CursorIndex, timestamp: DateTime.Now.Ticks);
+    strResult += arrResult.Aggregate("", (current, neta) => current + " " + neta.KeyValue.Value);
+    foreach (Unigram unigram in arrResult) Console.WriteLine(unigram);
+
+    theCompositor.CursorIndex = 4;
+    uom.Observe(walked, theCompositor.CursorIndex, "公司", DateTime.Now.Ticks);
+    arrResult =
+        uom.Suggest(walkedAnchors: walked, cursorIndex: theCompositor.CursorIndex, timestamp: DateTime.Now.Ticks);
+    strResult += arrResult.Aggregate("", (current, neta) => current + " " + neta.KeyValue.Value);
+    foreach (Unigram unigram in arrResult) Console.WriteLine(unigram);
+
+    theCompositor.CursorIndex = 7;
+    uom.Observe(walked, theCompositor.CursorIndex, "年終", DateTime.Now.Ticks);
+    arrResult =
+        uom.Suggest(walkedAnchors: walked, cursorIndex: theCompositor.CursorIndex, timestamp: DateTime.Now.Ticks);
+    strResult += arrResult.Aggregate("", (current, neta) => current + " " + neta.KeyValue.Value);
+    foreach (Unigram unigram in arrResult) Console.WriteLine(unigram);
+
+    Console.WriteLine(strResult);
+    Assert.That(strResult, Is.EqualTo(" - 拿到不同的建議結果： 獎金 高科技 公司 年終"));
+
     LMUserOverride.ShowDebugOutput = true;
   }
 }
