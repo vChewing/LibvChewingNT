@@ -93,6 +93,7 @@ public class LMUserOverride {
 
   private static string ConvertKeyFrom(List<NodeAnchor> walkedAnchors, int cursorIndex, bool readingOnly = false) {
     string[] arrEndingPunctuation = { "，", "。", "！", "？", "」", "』", "”", "’" };
+    string[] whiteList = { "你", "他", "妳", "她", "祢", "衪", "它", "牠", "再", "在" };
     List<NodeAnchor> arrNodes = new();
     int intLength = 0;
     foreach (NodeAnchor theAnchor in walkedAnchors) {
@@ -108,6 +109,7 @@ public class LMUserOverride {
     Node? nodeCurrent = arrNodes[0].Node;
     if (nodeCurrent == null) return "";
     KeyValuePaired kvCurrent = nodeCurrent.CurrentKeyValue;
+    double scoreCurrent = nodeCurrent.Score;
     if (arrEndingPunctuation.Contains(kvCurrent.Value)) return "";
 
     // 字音數與字數不一致的內容會被拋棄。
@@ -116,18 +118,21 @@ public class LMUserOverride {
     // 前置單元只記錄讀音，在其後的單元則同時記錄讀音與字詞
     string strCurrent = kvCurrent.Key;
     string readingStack = strCurrent;
-    string strPrevious = "()";
-    string strAnterior = "()";
-    string trigramKey() => $"{strAnterior},{strPrevious},{strCurrent}";
-    string result() => readingStack.Contains('_') ? "" : readingOnly ? strCurrent : trigramKey();
+    KeyValuePaired kvPrevious = new();
+    KeyValuePaired kvAnterior = new();
+    string trigramKey() => $"{kvAnterior.ToNGramKey()},{kvPrevious.ToNGramKey()},{strCurrent}";
+
+    string result() => (readingStack.Contains('_') ||
+                        (!kvPrevious.IsValid() && kvCurrent.Value.Length == 1 && !whiteList.Contains(kvCurrent.Value)))
+                           ? ""
+                           : (readingOnly ? strCurrent : trigramKey());
 
     if (arrNodes.Count >= 2) {
       Node? nodePrevious = arrNodes[1].Node;
       if (nodePrevious != null) {
-        KeyValuePaired kvPrevious = nodePrevious.CurrentKeyValue;
+        kvPrevious = nodePrevious.CurrentKeyValue;
         if (!arrEndingPunctuation.Contains(kvPrevious.Value) &&
             kvPrevious.Key.Split('-').Length == kvPrevious.Value.Length) {
-          strPrevious = $"({kvPrevious.Key},{kvPrevious.Value})";
           readingStack = kvPrevious.Key + "-" + readingStack;
         }
       }
@@ -136,10 +141,9 @@ public class LMUserOverride {
     if (arrNodes.Count < 3) return result();
     Node? nodeAnterior = arrNodes[2].Node;
     if (nodeAnterior == null) return result();
-    KeyValuePaired kvAnterior = nodeAnterior.CurrentKeyValue;
+    kvAnterior = nodeAnterior.CurrentKeyValue;
     if (arrEndingPunctuation.Contains(kvAnterior.Value)) return result();
     if (kvAnterior.Key.Split('-').Length != kvAnterior.Value.Length) return result();
-    strAnterior = $"({kvAnterior.Key},{kvAnterior.Value})";
     readingStack = kvAnterior.Key + "-" + readingStack;
 
     return result();
