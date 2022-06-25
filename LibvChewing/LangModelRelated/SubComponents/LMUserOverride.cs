@@ -23,6 +23,7 @@ CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 */
 
 using Megrez;
+using System.Text.Json;
 
 namespace LibvChewing {
 public class LMUserOverride {
@@ -109,7 +110,6 @@ public class LMUserOverride {
     Node? nodeCurrent = arrNodes[0].Node;
     if (nodeCurrent == null) return "";
     KeyValuePaired kvCurrent = nodeCurrent.CurrentKeyValue;
-    double scoreCurrent = nodeCurrent.Score;
     if (arrEndingPunctuation.Contains(kvCurrent.Value)) return "";
 
     // 字音數與字數不一致的內容會被拋棄。
@@ -149,8 +149,10 @@ public class LMUserOverride {
     return result();
   }
 
+  // TODO: Add JSON serialization read / dump support for this module.
+
 #region  // MARK: - Structs
-  private class Override {
+  private struct Override {
     public int Count { get; set; }
     public double Timestamp { get; set; }
     public Override(int count, double timestamp) {
@@ -159,25 +161,22 @@ public class LMUserOverride {
     }
   }
 
-  private class Observation {
+  private struct Observation {
     public int Count { get; private set; }
     public Dictionary<string, Override> Overrides = new();
-    public Observation(int count = 0, Dictionary<string, Override>? overrides = null) {
-      if (overrides != null) Overrides = overrides;
-      Count = count;
-    }
+    public Observation() { Count = 0; }
     public void Update(string candidate, double timestamp) {
       Count++;
       if (!Overrides.ContainsKey(candidate))
         Overrides[candidate] = new(count: 1, timestamp);
       else {
-        Overrides[candidate].Timestamp = timestamp;
-        Overrides[candidate].Count++;
+        int newCount = Overrides[candidate].Count + 1;
+        Overrides[candidate] = new(count: newCount, timestamp);
       }
     }
   }
 
-  private class KeyObservationPair {
+  private struct KeyObservationPair {
     public string Key { get; }
     public Observation Observation { get; }
     public KeyObservationPair(string key, Observation observation) {
