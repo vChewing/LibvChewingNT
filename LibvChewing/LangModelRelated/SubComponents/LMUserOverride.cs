@@ -113,7 +113,7 @@ public class LMUserOverride {
     if (arrEndingPunctuation.Contains(kvCurrent.Value)) return "";
 
     // 字音數與字數不一致的內容會被拋棄。
-    if (kvCurrent.Key.Split('-').Length != kvCurrent.Value.Length) return "";
+    if (kvCurrent.Key.Split('-').Length != U8Utils.GetU8Length(kvCurrent.Value)) return "";
 
     // 前置單元只記錄讀音，在其後的單元則同時記錄讀音與字詞
     string strCurrent = kvCurrent.Key;
@@ -122,17 +122,19 @@ public class LMUserOverride {
     KeyValuePaired kvAnterior = new();
     string trigramKey() => $"{kvAnterior.ToNGramKey()},{kvPrevious.ToNGramKey()},{strCurrent}";
 
-    string result() => (readingStack.Contains('_') ||
-                        (!kvPrevious.IsValid() && kvCurrent.Value.Length == 1 && !whiteList.Contains(kvCurrent.Value)))
+    string result() => readingStack.Contains('_') || !kvPrevious.IsValid() &&
+                                                         U8Utils.GetU8Length(kvCurrent.Value) == 1 &&
+                                                         !whiteList.Contains(kvCurrent.Value)
                            ? ""
-                           : (readingOnly ? strCurrent : trigramKey());
+                       : readingOnly ? strCurrent
+                                     : trigramKey();
 
     if (arrNodes.Count >= 2) {
       Node? nodePrevious = arrNodes[1].Node;
       if (nodePrevious != null) {
         kvPrevious = nodePrevious.CurrentKeyValue;
         if (!arrEndingPunctuation.Contains(kvPrevious.Value) &&
-            kvPrevious.Key.Split('-').Length == kvPrevious.Value.Length) {
+            kvPrevious.Key.Split('-').Length == U8Utils.GetU8Length(kvPrevious.Value)) {
           readingStack = kvPrevious.Key + "-" + readingStack;
         }
       }
@@ -143,7 +145,7 @@ public class LMUserOverride {
     if (nodeAnterior == null) return result();
     kvAnterior = nodeAnterior.CurrentKeyValue;
     if (arrEndingPunctuation.Contains(kvAnterior.Value)) return result();
-    if (kvAnterior.Key.Split('-').Length != kvAnterior.Value.Length) return result();
+    if (kvAnterior.Key.Split('-').Length != U8Utils.GetU8Length(kvAnterior.Value)) return result();
     readingStack = kvAnterior.Key + "-" + readingStack;
 
     return result();
