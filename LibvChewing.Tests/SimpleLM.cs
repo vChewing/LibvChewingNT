@@ -27,7 +27,7 @@ using Megrez;
 
 namespace LibvChewing.Tests;
 
-public class SimpleLM : LanguageModel {
+public class SimpleLM : LMInstantiator {
   private Dictionary<string, List<Unigram>> _database = new();
   public SimpleLM(string input, bool swapKeyValue = false) {
     List<string> sStream = new(input.Split('\n'));
@@ -50,9 +50,9 @@ public class SimpleLM : LanguageModel {
       }
     }
   }
-  public List<Unigram> UnigramsFor(string key) => _database.ContainsKey(key) ? _database[key] : new();
-  public List<Bigram> BigramsForKeys(string precedingKey, string key) { return new(); }
-  public bool HasUnigramsFor(string key) => _database.ContainsKey(key);
+  public new List<Unigram> UnigramsFor(string key) => _database.ContainsKey(key) ? _database[key] : new();
+  public new List<Bigram> BigramsForKeys(string precedingKey, string key) { return new(); }
+  public new bool HasUnigramsFor(string key) => _database.ContainsKey(key);
 }
 
 public class Shared {

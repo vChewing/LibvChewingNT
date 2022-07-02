@@ -56,10 +56,10 @@ public class InputSignalCLI : InputSignalProtocol {
     verticalTypingOnlyChooseCandidateKey = IsTypingVertical ? absorbedArrowKey : ConsoleKey.NoName;
   }
 
-  public InputSignalCLI(string inputText, ConsoleKey keyCode, ushort charCode, ConsoleModifiers flags,
+  public InputSignalCLI(string inputText, ConsoleKey keyCode, ushort charCode, ConsoleModifiers? flags,
                         bool IsVerticalTyping = false) {
     InputText = AppleKeyboardConverter.CnvStringApple2ABC(inputText);
-    Flags = flags;
+    Flags = flags ?? new();
     IsTypingVertical = IsVerticalTyping;
     Key = keyCode;
     CharCode = AppleKeyboardConverter.CnvApple2ABC(charCode);

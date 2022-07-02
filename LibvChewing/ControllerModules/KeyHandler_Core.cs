@@ -41,12 +41,12 @@ public partial class KeyHandler {
   private int kMaxComposingBufferNeedsToWalkSize = Math.Max(12, Prefs.ComposingBufferSize / 2);
   private Composer composer;
   private Compositor compositor;
-  private LMInstantiator currentLM = new();
-  private LMUserOverride currentUOM = new();
+  public LMInstantiator currentLM = new();
+  public LMUserOverride currentUOM = new();
   private List<NodeAnchor> walkedAnchors = new();
   private KeyHandlerDelegate? theDelegate;
 
-  private InputMode InputMode {
+  public InputMode InputMode {
     get => InputMode;
     set {
       // 這個標籤在下文會用到。
@@ -396,7 +396,7 @@ public partial class KeyHandler {
   /// </summary>
   private void EnsureCompositor() {
     // 每個漢字讀音都由一個西文半形減號分隔開。
-    compositor = new(currentLM, separator: "-");
+    compositor = new(currentLM, length: 20, separator: "-");
   }
 
   /// <summary>
