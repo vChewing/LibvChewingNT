@@ -27,7 +27,7 @@ using Megrez;
 
 namespace LibvChewing.Tests;
 
-public class SimpleLM : LMInstantiator {
+public class SimpleLM : LanguageModel {
   private Dictionary<string, List<Unigram>> _database = new();
   public SimpleLM(string input, bool swapKeyValue = false) {
     List<string> sStream = new(input.Split('\n'));

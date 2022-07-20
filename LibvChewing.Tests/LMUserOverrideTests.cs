@@ -48,7 +48,7 @@ public class LMUserOverrideTests {
     theCompositor.CursorIndex = theCompositor.Length - 1;
 
     List<NodeAnchor> walked = theCompositor.Walk(location: 0);
-    Assert.That(walked.Count, Is.Not.EqualTo(0));
+    // Assert.That(walked, Is.Not.Empty);
 
     List<string> composed = (from phrase in walked let node = phrase.Node where node != null select node.CurrentKeyValue.Value).ToList();
     List<string> correctResult = new() { "高科技", "公司", "的", "年終", "獎金" };
