@@ -211,6 +211,10 @@ public struct InputState {
     // TODO: Extend Literal Marked Range here.
     public List<string> Readings { get; private set; }
     public string TooltipForInputting = "";
+    public string LiteralReadingThread() {
+      // TODO: To be implemented.
+      return "";
+    }
 
     public Marking(string composingBuffer, int cursorIndex, int markerIndex, List<string> readings)
         : base(composingBuffer, cursorIndex) {
