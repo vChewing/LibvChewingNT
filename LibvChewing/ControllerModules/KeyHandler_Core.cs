@@ -41,13 +41,18 @@ public partial class KeyHandler {
   private int kMaxComposingBufferNeedsToWalkSize = Math.Max(12, Prefs.ComposingBufferSize / 2);
   private Composer composer;
   private Compositor compositor;
-  public LMInstantiator currentLM = new();
-  public LMUserOverride currentUOM = new();
+  public LMInstantiator currentLM = null!;
+  public LMUserOverride currentUOM = null!;
   private List<NodeAnchor> walkedAnchors = new();
   private KeyHandlerDelegate? theDelegate;
+  /// <summary>
+  /// 必須使用這個獨立的內部變數，不然只交給對外 InputMode 變數的話會漏棧。<br />
+  /// 要怨就只能怨 C# 沒有 didSet / willSet 機制。
+  /// </summary>
+  private InputMode inputMode;
 
   public InputMode InputMode {
-    get => InputMode;
+    get => inputMode;
     set {
       // 這個標籤在下文會用到。
       bool isCHS = value == InputMode.ImeModeCHS;
@@ -62,7 +67,7 @@ public partial class KeyHandler {
       // 組字器只能藉由重建才可以與當前新指派的語言模組對接。
       EnsureCompositor();
       EnsureParser();
-      InputMode = value;
+      inputMode = value;
     }
   }
 
