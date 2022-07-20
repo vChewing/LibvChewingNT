@@ -152,9 +152,10 @@ public partial class KeyHandler {
   /// <param name="value">給定之候選字字串。</param>
   /// <param name="respectCursorPushing">若該選項為 true，則會在選字之後始終將游標推送至選字厚的節錨的前方。</param>
   private void FixNode(string value, bool respectCursorPushing = true) {
-    int cursorIndex = Math.Min(ActualCandidateCursorIndex + (Prefs.UseRearCursorMode ? 1 : 0), CompositorLength);
+    int adjustedIndex =
+        Math.Max(0, Math.Min(ActualCandidateCursorIndex + (Prefs.UseRearCursorMode ? 1 : 0), CompositorLength));
     // 開始讓半衰模組觀察目前的狀況。
-    NodeAnchor selectedNode = compositor.Grid.FixNodeSelectedCandidate(cursorIndex, value);
+    NodeAnchor selectedNode = compositor.Grid.FixNodeSelectedCandidate(adjustedIndex, value);
     // 不要針對逐字選字模式啟用臨時半衰記憶模型。
     if (!Prefs.UseSCPCTypingMode) {
       bool addToUOM = true;
@@ -176,7 +177,7 @@ public partial class KeyHandler {
         Tools.PrintDebugIntel("UOM: Start Observation.");
         // 令半衰記憶模組觀測給定的三元圖。
         // 這個過程會讓半衰引擎根據當前上下文生成三元圖索引鍵。
-        currentUOM.Observe(walkedAnchors, cursorIndex, value, DateTime.Now.Ticks);
+        currentUOM.Observe(walkedAnchors, adjustedIndex, value, DateTime.Now.Ticks);
       }
     }
     // 開始爬軌。
@@ -185,7 +186,7 @@ public partial class KeyHandler {
     // 若偏好設定內啟用了相關選項，則會在選字之後始終將游標推送至選字厚的節錨的前方。
     if (!respectCursorPushing || !Prefs.MoveCursorAfterSelectingCandidate) return;
     int nextPosition = 0;
-    foreach (NodeAnchor theAnchor in walkedAnchors.TakeWhile(theAnchor => nextPosition < cursorIndex)) {
+    foreach (NodeAnchor theAnchor in walkedAnchors.TakeWhile(theAnchor => nextPosition < adjustedIndex)) {
       nextPosition += theAnchor.SpanningLength;
     }
     if (nextPosition <= CompositorLength) CompositorCursorIndex = nextPosition;
