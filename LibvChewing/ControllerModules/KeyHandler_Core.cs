@@ -174,8 +174,8 @@ public partial class KeyHandler {
       }
       if (addToUOM) {
         Tools.PrintDebugIntel("UOM: Start Observation.");
-        // 令半衰記憶模組觀測給定的 trigram。
-        // 這個過程會讓半衰引擎根據當前上下文生成 trigram 索引鍵。
+        // 令半衰記憶模組觀測給定的三元圖。
+        // 這個過程會讓半衰引擎根據當前上下文生成三元圖索引鍵。
         currentUOM.Observe(walkedAnchors, cursorIndex, value, DateTime.Now.Ticks);
       }
     }
