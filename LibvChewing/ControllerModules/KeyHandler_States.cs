@@ -94,6 +94,21 @@ public partial class KeyHandler {
                 tooltipParameterRef[1] = compositor.Readings[CompositorCursorIndex];
                 break;
             }
+            // 注音轉拼音
+            foreach (var it in tooltipParameterRef.Select((x, i) => new { Value = x, Index = i })) {
+              if (string.IsNullOrEmpty(it.Value)) continue;
+              if (it.Value.Contains('_')) continue;
+              // 下文直接對原始資料值進行操作。
+              if (Prefs.ShowHanyuPinyinInCompositionBuffer) {  // 恢復陰平標記->注音轉拼音->轉教科書式標調
+                tooltipParameterRef[it.Index] = Shared.RestoreToneOneInZhuyinKey(target: tooltipParameterRef[it.Index]);
+                tooltipParameterRef[it.Index] = Shared.CnvPhonaToHanyuPinyin(target: tooltipParameterRef[it.Index]);
+                tooltipParameterRef[it.Index] =
+                    Shared.CnvHanyuPinyinToTextbookStyle(target: tooltipParameterRef[it.Index]);
+              } else {
+                tooltipParameterRef[it.Index] =
+                    Shared.CnvZhuyinChainToTextbookReading(target: tooltipParameterRef[it.Index]);
+              }
+            }
           }
         }
       }
@@ -112,20 +127,20 @@ public partial class KeyHandler {
       cleanedComposition += neta;
     }
     // 這裡生成準備要拿來回呼的「正在輸入」狀態，但還不能立即使用，因為工具提示仍未完成。
-    InputState.Inputting stateResult = new(cleanedComposition, cursorIndex);
-
-    stateResult.Tooltip = (string.IsNullOrEmpty(tooltipParameterRef[0]),
-                           string.IsNullOrEmpty(tooltipParameterRef[1])) switch {
-      (true, true) => "",
-      (true, false) => new LocalizedString("KeyHandler_BuildInputtingState_ToolTip_ToTheRearOf",
-                                           $"Cursor is to the rear of {tooltipParameterRef[1]}.")
-                           .ToString(),
-      (false, true) => new LocalizedString("KeyHandler_BuildInputtingState_ToolTip_InFrontOf",
-                                           $"Cursor is in front of {tooltipParameterRef[0]}.")
-                           .ToString(),
-      (false, false) => new LocalizedString("KeyHandler_BuildInputtingState_ToolTip_BetweenReadings",
-                                            $"Cursor is between {tooltipParameterRef[0]} and {tooltipParameterRef[1]}.")
-                            .ToString(),
+    InputState.Inputting stateResult = new(cleanedComposition, cursorIndex) {
+      Tooltip = (string.IsNullOrEmpty(tooltipParameterRef[0]), string.IsNullOrEmpty(tooltipParameterRef[1])) switch {
+        (true, true) => "",
+               (true, false) => new LocalizedString("KeyHandler_BuildInputtingState_ToolTip_ToTheRearOf",
+                                                    $"Cursor is to the rear of {tooltipParameterRef[1]}.")
+                                    .ToString(),
+               (false, true) => new LocalizedString("KeyHandler_BuildInputtingState_ToolTip_InFrontOf",
+                                                    $"Cursor is in front of {tooltipParameterRef[0]}.")
+                                    .ToString(),
+               (false, false) =>
+                   new LocalizedString("KeyHandler_BuildInputtingState_ToolTip_BetweenReadings",
+                                       $"Cursor is between {tooltipParameterRef[0]} and {tooltipParameterRef[1]}.")
+                       .ToString(),
+      }
     };
 
     // TODO: 可以在這裡加入控制工具提示配色的指令。
@@ -303,8 +318,8 @@ public partial class KeyHandler {
     if (state is not InputState.Inputting) return false;
     string composingBuffer = string.Join("-", CurrentReadings);
     if (Prefs.InlineDumpPinyinInLieuOfZhuyin) {
-      composingBuffer = RestoreToneOneInZhuyinKey(composingBuffer);     // 恢復陰平標記
-      composingBuffer = Shared.CnvPhonaToHanyuPinyin(composingBuffer);  // 注音轉拼音
+      composingBuffer = Shared.RestoreToneOneInZhuyinKey(composingBuffer);  // 恢復陰平標記
+      composingBuffer = Shared.CnvPhonaToHanyuPinyin(composingBuffer);      // 注音轉拼音
     }
 
     composingBuffer = composingBuffer.Replace("-", " ");
@@ -332,12 +347,12 @@ public partial class KeyHandler {
       Node theNode = theAnchor.Node;
       string key = theNode.Key;
       if (Prefs.InlineDumpPinyinInLieuOfZhuyin) {
-        key = RestoreToneOneInZhuyinKey(key);
+        key = Shared.RestoreToneOneInZhuyinKey(key);
         key = Shared.CnvPhonaToHanyuPinyin(key);
         key = Shared.CnvHanyuPinyinToTextbookStyle(key);
         key = key.Replace("-", " ");
       } else {
-        key = CnvZhuyinKeyToTextbookReading(key, " ");
+        key = Shared.CnvZhuyinChainToTextbookReading(key, " ");
       }
 
       string value = theNode.CurrentKeyValue.Value;
