@@ -67,16 +67,16 @@ public struct InputState {
   /// 用以讓每個狀態自描述的 enum。
   /// </summary>
   public enum Type {
-    ofDeactivated,
-    ofAssociatedPhrases,
-    ofEmpty,
-    ofEmptyIgnorePreviousState,
-    ofCommitting,
-    ofNotEmpty,
-    ofInputting,
-    ofMarking,
-    ofChooseCandidate,
-    ofSymbolTable
+    OfDeactivated,
+    OfAssociatedPhrases,
+    OfEmpty,
+    OfEmptyIgnorePreviousState,
+    OfCommitting,
+    OfNotEmpty,
+    OfInputting,
+    OfMarking,
+    OfChooseCandidate,
+    OfSymbolTable
   }
 
   // MARK: - InputState.Deactivated
@@ -86,7 +86,7 @@ public struct InputState {
   /// 抑或是剛剛敲字遞交給客體應用、準備新的輸入行為。
   /// </summary>
   public partial class Deactivated : InputStateProtocol {
-    public Type Type => Type.ofDeactivated;
+    public Type Type => Type.OfDeactivated;
     public override string ToString() => "<InputState.Deactivated>";
   }
 
@@ -97,7 +97,7 @@ public struct InputState {
   /// 抑或是剛剛敲字遞交給客體應用、準備新的輸入行為。
   /// </summary>
   public partial class Empty : InputStateProtocol {
-    virtual public Type Type => Type.ofEmpty;
+    virtual public Type Type => Type.OfEmpty;
     public string ComposingBuffer => "";
     public override string ToString() => "<InputState.Empty>";
   }
@@ -110,7 +110,7 @@ public struct InputState {
   /// 該狀態在處理完畢之後會被立刻切換至 .Empty()。
   /// </summary>
   public partial class EmptyIgnorePreviousState : Empty {
-    override public Type Type => Type.ofEmptyIgnorePreviousState;
+    override public Type Type => Type.OfEmptyIgnorePreviousState;
     public override string ToString() => "<InputState.EmptyIgnoringPreviousState>";
   }
 
@@ -120,7 +120,7 @@ public struct InputState {
   /// .Committing: 該狀態會承載要遞交出去的內容，讓輸入法控制器處理時代為遞交。
   /// </summary>
   public partial class Committing : InputStateProtocol {
-    public Type Type => Type.ofCommitting;
+    public Type Type => Type.OfCommitting;
     public string TextToCommit { get; private set; } = "";
     public Committing(string textToCommit) { TextToCommit = textToCommit; }
     public override string ToString() => $"<InputState.Committing, TextToCommit:{TextToCommit}>";
@@ -133,7 +133,7 @@ public struct InputState {
   /// 因為逐字選字模式不需要在組字區內存入任何東西，所以該狀態不受 .NotEmpty 的管轄。
   /// </summary>
   public partial class AssociatedPhrases : InputStateProtocol {
-    public Type Type => Type.ofAssociatedPhrases;
+    public Type Type => Type.OfAssociatedPhrases;
     public List<string> Candidates { get; private set; } = new();
     public bool IsTypingVertical { get; private set; } = false;
     public AssociatedPhrases(List<string> candidates, bool isTypingVertical) {
@@ -155,7 +155,7 @@ public struct InputState {
   /// - .SymbolTable: 波浪鍵符號選單專用的狀態，有自身的特殊處理。<br />
   /// </summary>
   public partial class NotEmpty : InputStateProtocol {
-    virtual public Type Type => Type.ofNotEmpty;
+    virtual public Type Type => Type.OfNotEmpty;
     public string ComposingBuffer { get; private set; }
     public int CursorIndex {
       get => CursorIndex;
@@ -183,7 +183,7 @@ public struct InputState {
   /// .Inputting: 使用者輸入了內容。此時會出現組字區（Compositor）。
   /// </summary>
   public partial class Inputting : NotEmpty {
-    override public Type Type => Type.ofInputting;
+    override public Type Type => Type.OfInputting;
     public string TextToCommit = "";
     public string Tooltip = "";
     public Inputting(string composingBuffer, int cursorIndex) : base(composingBuffer, cursorIndex) {}
@@ -199,7 +199,7 @@ public struct InputState {
   /// </summary>
   public partial class Marking : NotEmpty {
     // TODO: Too many things lacked in this class.
-    override public Type Type => Type.ofMarking;
+    override public Type Type => Type.OfMarking;
     public Range allowedMarkRange =
         new(Prefs.MinCandidateLength, Math.Max(Prefs.MaxCandidateLength, Prefs.MinCandidateLength) + 1);
     public int MarkerIndex {
@@ -235,7 +235,7 @@ public struct InputState {
   /// .ChoosingCandidate: 叫出選字窗、允許使用者選字。
   /// </summary>
   public partial class ChoosingCandidate : NotEmpty {
-    override public Type Type => Type.ofChooseCandidate;
+    override public Type Type => Type.OfChooseCandidate;
     public List<string> Candidates { get; private set; }
     public bool IsTypingVertical { get; private set; }
     public ChoosingCandidate(string composingBuffer, int cursorIndex, List<string> candidates, bool isTypingVertical)
@@ -253,7 +253,7 @@ public struct InputState {
   /// .SymbolTable: 波浪鍵符號選單專用的狀態，有自身的特殊處理。
   /// </summary>
   public partial class SymbolTable : ChoosingCandidate {
-    override public Type Type => Type.ofSymbolTable;
+    override public Type Type => Type.OfSymbolTable;
     public SymbolNode Node = new("/");
     static List<string> GenerateCandidates(SymbolNode node) {
       List<string> arrCandidateResults = new();
