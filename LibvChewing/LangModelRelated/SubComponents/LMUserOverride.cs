@@ -23,7 +23,6 @@ CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 */
 
 using Megrez;
-using System.Text.Json;
 
 namespace LibvChewing {
 public class LMUserOverride {
@@ -93,7 +92,6 @@ public class LMUserOverride {
   }
 
   private static string ConvertKeyFrom(List<NodeAnchor> walkedAnchors, int cursorIndex, bool readingOnly = false) {
-    string[] arrEndingPunctuation = { "，", "。", "！", "？", "」", "』", "”", "’" };
     string[] whiteList = { "你", "他", "妳", "她", "祢", "衪", "它", "牠", "再", "在" };
     List<NodeAnchor> arrNodes = new();
     int intLength = 0;
@@ -108,9 +106,8 @@ public class LMUserOverride {
     arrNodes.Reverse();
 
     Node nodeCurrent = arrNodes[0].Node;
-    if (nodeCurrent == null) return "";
     KeyValuePaired kvCurrent = nodeCurrent.CurrentPair;
-    if (arrEndingPunctuation.Contains(kvCurrent.Value)) return "";
+    if (kvCurrent.Key.Contains('_')) return "";
 
     // 字音數與字數不一致的內容會被拋棄。
     if (kvCurrent.Key.Split('-').Length != U8Utils.GetU8Length(kvCurrent.Value)) return "";
@@ -131,27 +128,23 @@ public class LMUserOverride {
 
     if (arrNodes.Count >= 2) {
       Node nodePrevious = arrNodes[1].Node;
-      if (nodePrevious != null) {
-        kvPrevious = nodePrevious.CurrentPair;
-        if (!arrEndingPunctuation.Contains(kvPrevious.Value) &&
-            kvPrevious.Key.Split('-').Length == U8Utils.GetU8Length(kvPrevious.Value)) {
-          readingStack = kvPrevious.Key + "-" + readingStack;
-        }
+      kvPrevious = nodePrevious.CurrentPair;
+      if (!kvPrevious.Key.Contains('_') && kvPrevious.Key.Split('-').Length == U8Utils.GetU8Length(kvPrevious.Value)) {
+        readingStack = kvPrevious.Key + "-" + readingStack;
       }
     }
 
     if (arrNodes.Count < 3) return result();
     Node nodeAnterior = arrNodes[2].Node;
-    if (nodeAnterior == null) return result();
     kvAnterior = nodeAnterior.CurrentPair;
-    if (arrEndingPunctuation.Contains(kvAnterior.Value)) return result();
+    if (kvAnterior.Key.Contains('_')) return result();
     if (kvAnterior.Key.Split('-').Length != U8Utils.GetU8Length(kvAnterior.Value)) return result();
     readingStack = kvAnterior.Key + "-" + readingStack;
 
     return result();
   }
 
-  // TODO: Add JSON serialization read / dump support for this module.
+  // TODO: Add JSON serialization read / dump support for this module. -> using System.Text.Json;
 
 #region  // MARK: - Structs
   private struct Override {
