@@ -279,21 +279,7 @@ public partial class KeyHandler {
       // - 是否是針對當前注音排列/拼音輸入種類專門提供的標點符號。
       // - 是否是需要摁修飾鍵才可以輸入的那種標點符號。
 
-      string punctuationNamePrefix() {
-        if (Prefs.HalfWidthPunctuationEnabled) {
-          return "_half_punctuation_";
-        }
-        if (input.IsAltHold() && !input.IsControlHold()) {
-          return "_alt_punctuation_";
-        }
-        if (input.IsControlHold() && !input.IsAltHold()) {
-          return "_ctrl_punctuation_";
-        }
-        if (input.IsAltHold() && input.IsControlHold()) {
-          return "_alt_ctrl_punctuation_";
-        }
-        return "_punctuation_";
-      }
+      string punctuationNamePrefix() => GeneratePunctuationNamePrefixWithInputSignal(input);
 
       string parser = CurrentMandarinParser();
 

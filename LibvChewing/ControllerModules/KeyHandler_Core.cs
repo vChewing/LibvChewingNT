@@ -438,5 +438,22 @@ public partial class KeyHandler {
   /// </summary>
   private void DeleteCompositorReadingToTheFrontOfCursor() =>
       compositor.DropReading(Compositor.TypingDirection.ToFront);
+
+  /// <summary>
+  /// 生成標點符號索引鍵。
+  /// </summary>
+  /// <param name="input">輸入的按鍵訊號。</param>
+  /// <returns>生成的標點符號索引鍵。</returns>
+  private string GeneratePunctuationNamePrefixWithInputSignal(InputSignalProtocol input) {
+    if (Prefs.HalfWidthPunctuationEnabled) {
+      return "_half_punctuation_";
+    }
+    return (input.IsAltHold(), input.IsControlHold()) switch {
+      (true, true) => "_alt_ctrl_punctuation_",
+      (false, true) => "_ctrl_punctuation_",
+      (true, false) => "_alt_punctuation_",
+      _ => "_punctuation_",
+    };
+  }
 }
 }
