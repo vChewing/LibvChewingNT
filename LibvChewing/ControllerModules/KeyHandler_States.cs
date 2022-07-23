@@ -578,6 +578,7 @@ public partial class KeyHandler {
         stateCallback(state);
       }
     } else if (input.IsAltHold()) {
+      if (input.IsControlHold()) return HandleEnd(state, stateCallback, errorCallback);
       // 游標跳轉動作無論怎樣都會執行，但如果出了執行失敗的結果的話則觸發報錯流程。
       if (!compositor.JumpCursorBySpan(Compositor.TypingDirection.ToFront)) {
         Tools.PrintDebugIntel("33C3B580");
@@ -634,6 +635,7 @@ public partial class KeyHandler {
         stateCallback(state);
       }
     } else if (input.IsAltHold()) {
+      if (input.IsControlHold()) return HandleHome(state, stateCallback, errorCallback);
       // 游標跳轉動作無論怎樣都會執行，但如果出了執行失敗的結果的話則觸發報錯流程。
       if (!compositor.JumpCursorBySpan(Compositor.TypingDirection.ToRear)) {
         Tools.PrintDebugIntel("8D50DD9E");
