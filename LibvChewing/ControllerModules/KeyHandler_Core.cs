@@ -91,9 +91,8 @@ public partial class KeyHandler {
   /// 威注音對游標前置與游標後置模式採取的候選字節點陣列抓取方法是分離的，且不使用 Node Crossing。
   /// </summary>
   /// <returns>實際上的游標位址。</returns>
-  private int ActualCandidateCursorIndex => Prefs.UseRearCursorMode
-                                                ? Math.Min(CompositorCursorIndex, CompositorLength - 1)
-                                                : Math.Max(CompositorCursorIndex, 1);
+  private int ActualCandidateCursorIndex =>
+      Prefs.UseRearCursorMode ? Math.Min(compositor.Cursor, CompositorLength - 1) : Math.Max(compositor.Cursor, 1);
 
   /// <summary>
   /// 利用給定的讀音鏈來試圖爬取最接近的組字結果（最大相似度估算）。<br />
@@ -238,7 +237,7 @@ public partial class KeyHandler {
   /// 向半衰引擎詢問可能的選字建議。
   /// </summary>
   /// <returns>一個單元圖陣列。</returns>
-  private List<Unigram> FetchSuggestedCandidates() => currentUOM.Suggest(walkedAnchors, CompositorCursorIndex,
+  private List<Unigram> FetchSuggestedCandidates() => currentUOM.Suggest(walkedAnchors, compositor.Cursor,
                                                                          DateTime.Now.Ticks);
 
   /// <summary>
@@ -415,15 +414,6 @@ public partial class KeyHandler {
   /// </summary>
   /// <param name="reading">讀音。</param>
   private void InsertToCompositorAtCursor(string reading) { compositor.InsertReading(reading); }
-
-  /// <summary>
-  /// 組字器的游標位置。
-  /// </summary>
-  /// <value>組字器的游標位置。</value>
-  private int CompositorCursorIndex {
-    get => compositor.Cursor;
-    set => compositor.Cursor = value;
-  }
 
   /// <summary>
   /// 組字器的目前的長度。

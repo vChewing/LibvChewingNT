@@ -60,37 +60,37 @@ public partial class KeyHandler {
       // 每個節錨（NodeAnchor）都有自身的幅位長度（SpanLength），可以用來
       // 累加、以此為依據，來校正「可見游標位置」。
       int SpanLength = theAnchor.SpanLength;
-      if (readingCursorIndex + SpanLength <= CompositorCursorIndex) {
+      if (readingCursorIndex + SpanLength <= compositor.Cursor) {
         composedStringCursorIndex += strNodeValue.Length;
         readingCursorIndex += SpanLength;
       } else {
         if (codepointCount == SpanLength) {
           int i = 0;
-          while (i < codepointCount && readingCursorIndex < CompositorCursorIndex) {
+          while (i < codepointCount && readingCursorIndex < compositor.Cursor) {
             composedStringCursorIndex += arrSplit[i].Length;
             readingCursorIndex += 1;
             i += 1;
           }
         } else {
-          if (readingCursorIndex < CompositorCursorIndex) {
+          if (readingCursorIndex < compositor.Cursor) {
             composedStringCursorIndex += strNodeValue.Length;
             readingCursorIndex += SpanLength;
-            readingCursorIndex = Math.Min(readingCursorIndex, CompositorCursorIndex);
+            readingCursorIndex = Math.Min(readingCursorIndex, compositor.Cursor);
             // 接下來再處理這麼一種情況：
             // 某些錨點內的當前候選字詞長度與讀音長度不相等。
             // 但此時游標還是按照每個讀音單位來移動的，
             // 所以需要上下文工具提示來顯示游標的相對位置。
             // 這裡先計算一下要用在工具提示當中的顯示參數的內容。
-            switch (CompositorCursorIndex) {
+            switch (compositor.Cursor) {
               case var n when n >= compositor.Readings.Count:
                 tooltipParameterRef[0] = compositor.Readings[^1];
                 break;
               case 0:
-                tooltipParameterRef[1] = compositor.Readings[CompositorCursorIndex];
+                tooltipParameterRef[1] = compositor.Readings[compositor.Cursor];
                 break;
               default:
-                tooltipParameterRef[0] = compositor.Readings[CompositorCursorIndex - 1];
-                tooltipParameterRef[1] = compositor.Readings[CompositorCursorIndex];
+                tooltipParameterRef[0] = compositor.Readings[compositor.Cursor - 1];
+                tooltipParameterRef[1] = compositor.Readings[compositor.Cursor];
                 break;
             }
             // 注音轉拼音
@@ -381,7 +381,7 @@ public partial class KeyHandler {
     if (composer.HasToneMarker(withNothingElse: true))
       composer.Clear();
     else if (composer.IsEmpty) {
-      if (CompositorCursorIndex > 0) {
+      if (compositor.Cursor > 0) {
         DeleteCompositorReadingAtTheRearOfCursor();
         Walk();
       } else {
@@ -419,7 +419,7 @@ public partial class KeyHandler {
       return true;
     }
 
-    if (CompositorCursorIndex == CompositorLength) {
+    if (compositor.Cursor == CompositorLength) {
       Tools.PrintDebugIntel("9B69938D");
       errorCallback(Error.OfNormal);
       stateCallback(state);
@@ -474,8 +474,8 @@ public partial class KeyHandler {
       return true;
     }
 
-    if (CompositorCursorIndex != 0) {
-      CompositorCursorIndex = 0;
+    if (compositor.Cursor != 0) {
+      compositor.Cursor = 0;
       stateCallback(BuildInputtingState());
     } else {
       Tools.PrintDebugIntel("66D97F90");
@@ -506,8 +506,8 @@ public partial class KeyHandler {
       return true;
     }
 
-    if (CompositorCursorIndex != CompositorLength) {
-      CompositorCursorIndex = CompositorLength;
+    if (compositor.Cursor != CompositorLength) {
+      compositor.Cursor = CompositorLength;
       stateCallback(BuildInputtingState());
     } else {
       Tools.PrintDebugIntel("9B69908E");
@@ -578,8 +578,8 @@ public partial class KeyHandler {
         stateCallback(state);
       }
     } else {
-      if (CompositorCursorIndex < CompositorLength) {
-        CompositorCursorIndex += 1;
+      if (compositor.Cursor < CompositorLength) {
+        compositor.Cursor += 1;
         stateCallback(BuildInputtingState());
       } else {
         Tools.PrintDebugIntel("A96AAD58");
@@ -625,8 +625,8 @@ public partial class KeyHandler {
         stateCallback(state);
       }
     } else {
-      if (CompositorCursorIndex > 0) {
-        CompositorCursorIndex -= 1;
+      if (compositor.Cursor > 0) {
+        compositor.Cursor -= 1;
         stateCallback(BuildInputtingState());
       } else {
         Tools.PrintDebugIntel("7045E6F");

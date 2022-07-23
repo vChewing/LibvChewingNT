@@ -231,7 +231,7 @@ public partial class KeyHandler {
       if (input.IsSpace()) {
         // 倘若沒有在偏好設定內將 Space 空格鍵設為選字窗呼叫用鍵的話………
         if (!Prefs.ChooseCandidateUsingSpace) {
-          if (CompositorCursorIndex >= CompositorLength) {
+          if (compositor.Cursor >= CompositorLength) {
             string composingBuffer = currentState.ComposingBuffer;
             if (string.IsNullOrEmpty(composingBuffer)) {
               stateCallback(new InputState.Committing(composingBuffer));
