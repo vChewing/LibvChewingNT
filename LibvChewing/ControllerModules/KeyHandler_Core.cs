@@ -183,11 +183,7 @@ public partial class KeyHandler {
 
     // 若偏好設定內啟用了相關選項，則會在選字之後始終將游標推送至選字厚的節錨的前方。
     if (!respectCursorPushing || !Prefs.MoveCursorAfterSelectingCandidate) return;
-    int nextPosition = 0;
-    foreach (NodeAnchor theAnchor in walkedAnchors.TakeWhile(theAnchor => nextPosition < adjustedIndex)) {
-      nextPosition += theAnchor.SpanLength;
-    }
-    if (nextPosition <= CompositorLength) CompositorCursorIndex = nextPosition;
+    compositor.JumpCursorBySpan(Compositor.TypingDirection.ToFront);
   }
 
   /// <summary>
