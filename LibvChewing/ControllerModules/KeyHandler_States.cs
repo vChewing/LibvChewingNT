@@ -158,7 +158,7 @@ public partial class KeyHandler {
   private InputState.ChoosingCandidate BuildCandidate(InputState.NotEmpty currentState,
                                                       bool isTypingVertical = false) =>
       new(currentState.ComposingBuffer, currentState.CursorIndex,
-          CandidatesArray(fixOrder: Prefs.UseFixecCandidateOrderOnSelection), isTypingVertical);
+          GetCandidatesArray(fixOrder: Prefs.UseFixecCandidateOrderOnSelection), isTypingVertical);
 
   // MARK: - 用以接收聯想詞陣列且生成狀態
 
@@ -277,10 +277,10 @@ public partial class KeyHandler {
     InputState.ChoosingCandidate candidateState = BuildCandidate(inputting, isTypingVertical);
     if (candidateState.Candidates.Count == 1) {
       Clear();
-      if (string.IsNullOrEmpty(candidateState.Candidates[0]))
+      if (string.IsNullOrEmpty(candidateState.Candidates[0].Item2))
         stateCallback(candidateState);
       else {
-        stateCallback(new InputState.Committing(textToCommit: candidateState.Candidates[0]));
+        stateCallback(new InputState.Committing(textToCommit: candidateState.Candidates[0].Item2));
         stateCallback(new InputState.Empty());
       }
     } else {
@@ -685,7 +685,7 @@ public partial class KeyHandler {
       return true;
     }
 
-    List<string> candidates = CandidatesArray(fixOrder: true);
+    List<(string, string)> candidates = GetCandidatesArray(fixOrder: true);
     if (candidates.Count == 0) {
       Tools.PrintDebugIntel("3378A6DF");
       errorCallback(Error.OfNormal);
@@ -704,7 +704,7 @@ public partial class KeyHandler {
     }
 
     Node currentNode = currentAnchor.Node;
-    string currentValue = currentNode.CurrentPair.Value;
+    KeyValuePaired currentPaired = currentNode.CurrentPair;
 
     int currentIndex = 0;
     if (currentNode.Score < Node.ConSelectedCandidateScore) {
@@ -716,13 +716,13 @@ public partial class KeyHandler {
       // 選中的話，則使用者可以直接摁下本函式對應的按鍵來輪替候選字即可。
       // （預設情況下是 (Shift+)Tab 來做正 (反) 向切換，但也可以用
       // Shift(+CMD)+Space 來切換、以應對臉書綁架 Tab 鍵的情況。
-      if (candidates[0] == currentValue)
+      if (candidates[0].Item1 == currentPaired.Key && candidates[0].Item2 == currentPaired.Value)
         // 如果第一個候選字詞是當前節點的候選字詞的值的話，
         // 那就切到下一個（或上一個，也就是最後一個）候選字詞。
         currentIndex = reverseModifier ? candidates.Count - 1 : 1;
     } else {
-      foreach (string candidate in candidates) {
-        if (candidate == currentValue) {
+      foreach ((string, string)candidate in candidates) {
+        if (candidate.Item1 == currentPaired.Key && candidate.Item2 == currentPaired.Value) {
           if (reverseModifier) {
             if (currentIndex == 0) {
               currentIndex = candidates.Count - 1;

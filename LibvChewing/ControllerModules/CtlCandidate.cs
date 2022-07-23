@@ -11,7 +11,7 @@ public struct CandidateKeyLabel {
 
 public interface CtlCandidateDelegate {
   int CandidateCountForController(CtlCandidate controller);
-  string CtlCandidate(CtlCandidate controller, int CandidateAtIndex);
+  (string, string) CtlCandidate(CtlCandidate controller, int CandidateAtIndex);
   void CtlCandidateDidSelect(CtlCandidate controller, int didSelectCandidateAtIndex);
 }
 

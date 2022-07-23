@@ -134,9 +134,9 @@ public struct InputState {
   /// </summary>
   public partial class AssociatedPhrases : InputStateProtocol {
     public Type Type => Type.OfAssociatedPhrases;
-    public List<string> Candidates { get; private set; } = new();
+    public List<(string, string)> Candidates { get; private set; } = new();
     public bool IsTypingVertical { get; private set; } = false;
-    public AssociatedPhrases(List<string> candidates, bool isTypingVertical) {
+    public AssociatedPhrases(List<(string, string)> candidates, bool isTypingVertical) {
       Candidates = candidates;
       IsTypingVertical = isTypingVertical;
     }
@@ -240,9 +240,10 @@ public struct InputState {
   /// </summary>
   public partial class ChoosingCandidate : NotEmpty {
     override public Type Type => Type.OfChooseCandidate;
-    public List<string> Candidates { get; private set; }
+    public List<(string, string)> Candidates { get; private set; }
     public bool IsTypingVertical { get; private set; }
-    public ChoosingCandidate(string composingBuffer, int cursorIndex, List<string> candidates, bool isTypingVertical)
+    public ChoosingCandidate(string composingBuffer, int cursorIndex, List<(string, string)> candidates,
+                             bool isTypingVertical)
         : base(composingBuffer, cursorIndex) {
       Candidates = candidates;
       IsTypingVertical = isTypingVertical;
@@ -259,14 +260,14 @@ public struct InputState {
   public partial class SymbolTable : ChoosingCandidate {
     override public Type Type => Type.OfSymbolTable;
     public SymbolNode Node = new("/");
-    static List<string> GenerateCandidates(SymbolNode node) {
+    static List<(string, string)> GenerateCandidates(SymbolNode node) {
       List<string> arrCandidateResults = new();
       if (node.Children != null) {
         foreach (SymbolNode neta in node.Children!) {
           arrCandidateResults.Add(neta.Title);
         }
       }
-      return arrCandidateResults;
+      return arrCandidateResults.Select(neta => ("", neta)).ToList();
     }
     public SymbolTable(SymbolNode node, bool isTypingVertical)
         : base("", 0, GenerateCandidates(node), isTypingVertical) {

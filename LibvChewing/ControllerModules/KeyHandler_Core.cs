@@ -136,12 +136,12 @@ public partial class KeyHandler {
   /// </summary>
   /// <param name="key">給定的聯想詞的開頭字。</param>
   /// <returns>抓取到的聯想詞陣列。不會是 nil，但那些負責接收結果的函式會對空白陣列結果做出正確的處理。</returns>
-  private List<string> BuildAssociatePhraseArrayWith(string key) {
+  private List<(string, string)> BuildAssociatePhraseArrayWith(string key) {
     List<string> arrResult = new();
     if (currentLM.HasAssociatedPhrasesForKey(key)) {
       arrResult.AddRange(currentLM.AssociatedPhrasesForKey(key));
     }
-    return arrResult;
+    return arrResult.Select(neta => ("", neta)).ToList();
   }
 
   /// <summary>
@@ -150,22 +150,23 @@ public partial class KeyHandler {
   /// </summary>
   /// <param name="value">給定之候選字字串。</param>
   /// <param name="respectCursorPushing">若該選項為 true，則會在選字之後始終將游標推送至選字厚的節錨的前方。</param>
-  private void FixNode(string value, bool respectCursorPushing = true) {
+  private void FixNode((string, string)candidate, bool respectCursorPushing = true) {
+    KeyValuePaired theCandidate = new(key: candidate.Item1, value: candidate.Item2);
     int adjustedIndex =
         Math.Max(0, Math.Min(ActualCandidateCursorIndex + (Prefs.UseRearCursorMode ? 1 : 0), CompositorLength));
     // 開始讓半衰模組觀察目前的狀況。
-    NodeAnchor selectedNode = compositor.FixNodeWithCandidateLiteral(value, adjustedIndex);
+    NodeAnchor selectedNode = compositor.FixNodeWithCandidate(theCandidate, adjustedIndex);
     // 不要針對逐字選字模式啟用臨時半衰記憶模型。
     if (!Prefs.UseSCPCTypingMode) {
       bool addToUOM = true;
       // 所有讀音數與字符數不匹配的情況均不得塞入半衰記憶模組。
-      if (selectedNode.SpanLength != value.Length) {
+      if (selectedNode.SpanLength != theCandidate.Value.Length) {
         Tools.PrintDebugIntel("UOM: SpanLength != value.Count, dismissing.");
         addToUOM = false;
       }
       if (addToUOM) {
         // 威注音的 SymbolLM 的 Score 是 -12，符合該條件的內容不得塞入半衰記憶模組。
-        if (selectedNode.Node.ScoreFor(value) <= -12) {
+        if (selectedNode.Node.ScoreFor(theCandidate.Value) <= -12) {
           Tools.PrintDebugIntel("UOM: Score <= -12, dismissing.");
           addToUOM = false;
         }
@@ -174,7 +175,7 @@ public partial class KeyHandler {
         Tools.PrintDebugIntel("UOM: Start Observation.");
         // 令半衰記憶模組觀測給定的三元圖。
         // 這個過程會讓半衰引擎根據當前上下文生成三元圖索引鍵。
-        currentUOM.Observe(walkedAnchors, adjustedIndex, value, DateTime.Now.Ticks);
+        currentUOM.Observe(walkedAnchors, adjustedIndex, theCandidate.Value, DateTime.Now.Ticks);
       }
     }
     // 開始爬軌。
@@ -202,35 +203,40 @@ public partial class KeyHandler {
   }
 
   /// <summary>
-  /// 獲取候選字詞陣列資料內容。
+  /// 獲取候選字詞（包含讀音）陣列資料內容。
   /// </summary>
   /// <param name="fixOrder">是否鎖定候選字詞排序。</param>
-  /// <returns>候選字詞資料陣列。</returns>
-  private List<string> CandidatesArray(bool fixOrder = true) {
+  /// <returns>候選字詞資料讀音配對陣列。</returns>
+  private List<(string, string)> GetCandidatesArray(bool fixOrder = true) {
     List<NodeAnchor> arrAnchors = RawAnchorsOfNodes;
-    List<string> arrCandidates = new();
+    List<KeyValuePaired> arrCandidates = new();
 
     // 原理：nodes 這個回饋結果包含一堆子陣列，分別對應不同詞長的候選字。
     // 這裡先對陣列排序、讓最長候選字的子陣列的優先權最高。
     // 這個過程不會傷到子陣列內部的排序。
-    if (arrAnchors.Count == 0) return arrCandidates;
+    if (arrAnchors.Count == 0) return new();
 
     // 讓更長的節錨排序靠前。
     arrAnchors = arrAnchors.OrderByDescending(a => a.SpanLength).ToList();
 
     // 將節錨內的候選字詞資料拓印到輸出陣列內。
-    arrCandidates.AddRange(from theAnchor in arrAnchors from theCandidate in theAnchor.Node!.Candidates select theCandidate.Value);
+    arrCandidates.AddRange(
+        from theAnchor in arrAnchors from theCandidate in theAnchor.Node!.Candidates select theCandidate);
     // 決定是否根據半衰記憶模組的建議來調整候選字詞的順序。
     if (!fixOrder && !Prefs.UseSCPCTypingMode && Prefs.FetchSuggestionsFromUserOverrideModel) {
       List<Unigram> arrSuggestedUnigrams = FetchSuggestedCandidates().OrderByDescending(a => a.Score).ToList();
-      List<string> arrSuggestedCandidates = new();
-      arrSuggestedCandidates.AddRange(arrSuggestedUnigrams.Select(gram => gram.KeyValue.Value));
-      foreach (string candidate in arrSuggestedCandidates.Where(candidate => arrCandidates.Contains(candidate))) {
+      List<KeyValuePaired> arrSuggestedCandidates = new();
+      arrSuggestedCandidates.AddRange(arrSuggestedUnigrams.Select(gram => gram.KeyValue));
+      foreach (KeyValuePaired candidate in arrSuggestedCandidates.Where(candidate =>
+                                                                            arrCandidates.Contains(candidate))) {
         arrSuggestedCandidates.Remove(candidate);
       }
-      arrCandidates = arrSuggestedCandidates.Concat(arrCandidates).Distinct().OrderByDescending(a => a.Length).ToList();
+      arrCandidates = arrSuggestedCandidates.Concat(arrCandidates)
+                          .Distinct()
+                          .OrderByDescending(a => a.Key.Split('-').Length)
+                          .ToList();
     }
-    return arrCandidates;
+    return arrCandidates.Select(neta => (neta.Key, neta.Value)).ToList();
   }
 
   /// <summary>

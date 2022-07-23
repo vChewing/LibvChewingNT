@@ -222,7 +222,7 @@ public partial class KeyHandler {
 
     // MARK: End Key
 
-    List<string> candidates = new();
+    List<(string, string)> candidates = new();
 
     switch (state) {
       case InputState.ChoosingCandidate candidate:

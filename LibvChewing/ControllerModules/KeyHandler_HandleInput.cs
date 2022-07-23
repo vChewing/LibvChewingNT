@@ -195,7 +195,7 @@ public partial class KeyHandler {
         InputState.ChoosingCandidate choosingCandidates = BuildCandidate(inputting, input.IsTypingVertical);
         if (choosingCandidates.Candidates.Count == 1) {
           Clear();
-          string text = choosingCandidates.Candidates[0];
+          string text = choosingCandidates.Candidates[0].Item2;
           stateCallback(new InputState.Committing(textToCommit: text));
 
           if (!Prefs.AssociatedPhrasesEnabled)
