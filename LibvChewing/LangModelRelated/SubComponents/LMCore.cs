@@ -31,7 +31,7 @@ namespace LibvChewing {
 /// 目前僅針對輸入法使用者語彙資料檔案使用 txt 格式。
 /// </summary>
 // 000
-public struct LMCore : LanguageModel {
+public struct LMCore : LangModelProtocol {
   /// <summary>
   /// 資料庫辭典。索引內容為注音字串，資料內容則為單元圖陣列。
   /// </summary>
@@ -140,7 +140,7 @@ public struct LMCore : LanguageModel {
   /// <param name="key">讀音索引鍵。</param>
   /// <param name="precedingKey">前述讀音索引鍵。</param>
   /// <returns>雙元圖陣列。</returns>
-  public List<Bigram> BigramsForKeys(string precedingKey, string key) { return new(); }
+  public List<Bigram> BigramsFor(string precedingKey, string key) { return new(); }
 
   /// <summary>
   /// 根據給定的讀音索引鍵來確認資料庫陣列內是否存在對應的資料。

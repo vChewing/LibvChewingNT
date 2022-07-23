@@ -31,7 +31,7 @@ public class KeyHandlerTests {
     Prefs.MandarinParser = 0;
     Prefs.UseSCPCTypingMode = false;
     SimpleLM lmTestInput = new(Shared.StrSampleData);
-    KeyHandler handler = new() { currentLM = new(), currentUOM = new() };
+    handler = new() { currentLM = new(), currentUOM = new() };
   }
 
   [TearDown]

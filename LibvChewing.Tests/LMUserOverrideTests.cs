@@ -34,23 +34,23 @@ public class LMUserOverrideTests {
     Compositor theCompositor = new(lmTestInput, separator: "-");
 
     // 模擬輸入法的行為，每次敲字或選字都重新 walk。;
-    theCompositor.InsertReadingAtCursor("gao1");
-    theCompositor.InsertReadingAtCursor("ke1");
-    theCompositor.InsertReadingAtCursor("ji4");
-    theCompositor.InsertReadingAtCursor("gong1");
-    theCompositor.InsertReadingAtCursor("si1");
-    theCompositor.InsertReadingAtCursor("de5");
-    theCompositor.InsertReadingAtCursor("nian2");
-    theCompositor.InsertReadingAtCursor("zhong1");
-    theCompositor.Grid.FixNodeSelectedCandidate(7, "年終");
-    theCompositor.InsertReadingAtCursor("jiang3");
-    theCompositor.InsertReadingAtCursor("jin1");
-    theCompositor.CursorIndex = theCompositor.Length - 1;
+    theCompositor.InsertReading("gao1");
+    theCompositor.InsertReading("ke1");
+    theCompositor.InsertReading("ji4");
+    theCompositor.InsertReading("gong1");
+    theCompositor.InsertReading("si1");
+    theCompositor.InsertReading("de5");
+    theCompositor.InsertReading("nian2");
+    theCompositor.InsertReading("zhong1");
+    theCompositor.FixNodeWithCandidateLiteral("年終", 7);
+    theCompositor.InsertReading("jiang3");
+    theCompositor.InsertReading("jin1");
+    theCompositor.Cursor = theCompositor.Length - 1;
 
-    List<NodeAnchor> walked = theCompositor.Walk(location: 0);
+    List<NodeAnchor> walked = theCompositor.Walk();
     // Assert.That(walked, Is.Not.Empty);
 
-    List<string> composed = (from phrase in walked let node = phrase.Node where node != null select node.CurrentKeyValue.Value).ToList();
+    List<string> composed = (from phrase in walked let node = phrase.Node where node != null select node.CurrentPair.Value).ToList();
     List<string> correctResult = new() { "高科技", "公司", "的", "年終", "獎金" };
     Assert.That(string.Join("_", composed), Is.EqualTo(string.Join("_", correctResult)));
     Console.WriteLine("完畢！");
@@ -61,31 +61,28 @@ public class LMUserOverrideTests {
     string strResult = " - 拿到不同的建議結果：";
 
     // 有些詞需要觀測兩遍才會被建議。
-    uom.Observe(walked, theCompositor.CursorIndex, "獎金", DateTime.Now.Ticks);
-    uom.Observe(walked, theCompositor.CursorIndex, "獎金", DateTime.Now.Ticks);
+    uom.Observe(walked, theCompositor.Cursor, "獎金", DateTime.Now.Ticks);
+    uom.Observe(walked, theCompositor.Cursor, "獎金", DateTime.Now.Ticks);
     List<Unigram> arrResult =
-        uom.Suggest(walkedAnchors: walked, cursorIndex: theCompositor.CursorIndex, timestamp: DateTime.Now.Ticks);
+        uom.Suggest(walkedAnchors: walked, cursorIndex: theCompositor.Cursor, timestamp: DateTime.Now.Ticks);
     strResult += arrResult.Aggregate("", (current, neta) => current + " " + neta.KeyValue.Value);
     foreach (Unigram unigram in arrResult) Console.WriteLine(unigram);
 
-    theCompositor.CursorIndex = 2;
-    uom.Observe(walked, theCompositor.CursorIndex, "高科技", DateTime.Now.Ticks);
-    arrResult =
-        uom.Suggest(walkedAnchors: walked, cursorIndex: theCompositor.CursorIndex, timestamp: DateTime.Now.Ticks);
+    theCompositor.Cursor = 2;
+    uom.Observe(walked, theCompositor.Cursor, "高科技", DateTime.Now.Ticks);
+    arrResult = uom.Suggest(walkedAnchors: walked, cursorIndex: theCompositor.Cursor, timestamp: DateTime.Now.Ticks);
     strResult += arrResult.Aggregate("", (current, neta) => current + " " + neta.KeyValue.Value);
     foreach (Unigram unigram in arrResult) Console.WriteLine(unigram);
 
-    theCompositor.CursorIndex = 4;
-    uom.Observe(walked, theCompositor.CursorIndex, "公司", DateTime.Now.Ticks);
-    arrResult =
-        uom.Suggest(walkedAnchors: walked, cursorIndex: theCompositor.CursorIndex, timestamp: DateTime.Now.Ticks);
+    theCompositor.Cursor = 4;
+    uom.Observe(walked, theCompositor.Cursor, "公司", DateTime.Now.Ticks);
+    arrResult = uom.Suggest(walkedAnchors: walked, cursorIndex: theCompositor.Cursor, timestamp: DateTime.Now.Ticks);
     strResult += arrResult.Aggregate("", (current, neta) => current + " " + neta.KeyValue.Value);
     foreach (Unigram unigram in arrResult) Console.WriteLine(unigram);
 
-    theCompositor.CursorIndex = 7;
-    uom.Observe(walked, theCompositor.CursorIndex, "年終", DateTime.Now.Ticks);
-    arrResult =
-        uom.Suggest(walkedAnchors: walked, cursorIndex: theCompositor.CursorIndex, timestamp: DateTime.Now.Ticks);
+    theCompositor.Cursor = 7;
+    uom.Observe(walked, theCompositor.Cursor, "年終", DateTime.Now.Ticks);
+    arrResult = uom.Suggest(walkedAnchors: walked, cursorIndex: theCompositor.Cursor, timestamp: DateTime.Now.Ticks);
     strResult += arrResult.Aggregate("", (current, neta) => current + " " + neta.KeyValue.Value);
     foreach (Unigram unigram in arrResult) Console.WriteLine(unigram);
 

@@ -34,7 +34,7 @@ namespace LibvChewing {
 /// 目前僅針對輸入法原廠語彙資料檔案使用 plist 格式。
 /// </summary>
 // 000
-public struct LMCoreNS : LanguageModel {
+public struct LMCoreNS : LangModelProtocol {
   /// <summary>
   /// 資料庫辭典。索引內容為經過加密的注音字串，資料內容則為 UTF8 資料陣列。
   /// </summary>
@@ -138,7 +138,7 @@ public struct LMCoreNS : LanguageModel {
   /// <param name="key">讀音索引鍵。</param>
   /// <param name="precedingKey">前述讀音索引鍵。</param>
   /// <returns>雙元圖陣列。</returns>
-  public List<Bigram> BigramsForKeys(string precedingKey, string key) { return new(); }
+  public List<Bigram> BigramsFor(string precedingKey, string key) { return new(); }
 
   /// <summary>
   /// 根據給定的讀音索引鍵來確認資料庫陣列內是否存在對應的資料。

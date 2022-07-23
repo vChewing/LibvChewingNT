@@ -51,21 +51,20 @@ public partial class KeyHandler {
     // 這樣就可以免除不必要的類型轉換。
     // 我們推定 Windows 平台也得需要用 UTF16 來處理。如果實際情況有變的話，再做調整。
     foreach (NodeAnchor theAnchor in walkedAnchors) {
-      if (theAnchor.Node == null) continue;
       Node theNode = theAnchor.Node;
-      string strNodeValue = theNode.CurrentKeyValue.Value;
+      string strNodeValue = theNode.CurrentPair.Value;
       composingBuffer += strNodeValue;
       List<string> arrSplit = U8Utils.GetU8Elements(strNodeValue);
       int codepointCount = arrSplit.Count;
       // 藉下述步驟重新將「可見游標位置」對齊至「組字器內的游標所在的讀音位置」。
-      // 每個節錨（NodeAnchor）都有自身的幅位長度（spanningLength），可以用來
+      // 每個節錨（NodeAnchor）都有自身的幅位長度（SpanLength），可以用來
       // 累加、以此為依據，來校正「可見游標位置」。
-      int spanningLength = theAnchor.SpanningLength;
-      if (readingCursorIndex + spanningLength <= CompositorCursorIndex) {
+      int SpanLength = theAnchor.SpanLength;
+      if (readingCursorIndex + SpanLength <= CompositorCursorIndex) {
         composedStringCursorIndex += strNodeValue.Length;
-        readingCursorIndex += spanningLength;
+        readingCursorIndex += SpanLength;
       } else {
-        if (codepointCount == spanningLength) {
+        if (codepointCount == SpanLength) {
           int i = 0;
           while (i < codepointCount && readingCursorIndex < CompositorCursorIndex) {
             composedStringCursorIndex += arrSplit[i].Length;
@@ -75,7 +74,7 @@ public partial class KeyHandler {
         } else {
           if (readingCursorIndex < CompositorCursorIndex) {
             composedStringCursorIndex += strNodeValue.Length;
-            readingCursorIndex += spanningLength;
+            readingCursorIndex += SpanLength;
             readingCursorIndex = Math.Min(readingCursorIndex, CompositorCursorIndex);
             // 接下來再處理這麼一種情況：
             // 某些錨點內的當前候選字詞長度與讀音長度不相等。
@@ -343,7 +342,6 @@ public partial class KeyHandler {
     if (state is not InputState.Inputting) return false;
     string composed = "";
     foreach (NodeAnchor theAnchor in walkedAnchors) {
-      if (theAnchor.Node == null) continue;
       Node theNode = theAnchor.Node;
       string key = theNode.Key;
       if (Prefs.InlineDumpPinyinInLieuOfZhuyin) {
@@ -355,7 +353,7 @@ public partial class KeyHandler {
         key = Shared.CnvZhuyinChainToTextbookReading(key, " ");
       }
 
-      string value = theNode.CurrentKeyValue.Value;
+      string value = theNode.CurrentPair.Value;
       // 不要給標點符號等特殊元素加注音
       composed += key.Contains("_") ? value : $"<ruby>{value}<rp>(</rp><rt>{key}</rt><rp>)</rp></ruby>";
     }
@@ -677,24 +675,18 @@ public partial class KeyHandler {
     }
 
     int length = 0;
-    NodeAnchor currentAnchor = new();
+    NodeAnchor currentAnchor = new(node: new());
     int cursorIndex = Math.Min(ActualCandidateCursorIndex + (Prefs.UseRearCursorMode ? 1 : 0), CompositorLength);
     foreach (NodeAnchor anchor in walkedAnchors) {
-      length += anchor.SpanningLength;
+      length += anchor.SpanLength;
       if (length >= cursorIndex) {
         currentAnchor = anchor;
         break;
       }
     }
 
-    if (currentAnchor.Node == null) {
-      Tools.PrintDebugIntel("4F2DEC2F");
-      errorCallback(Error.OfNormal);
-      return true;
-    }
-
     Node currentNode = currentAnchor.Node;
-    string currentValue = currentNode.CurrentKeyValue.Value;
+    string currentValue = currentNode.CurrentPair.Value;
 
     int currentIndex = 0;
     if (currentNode.Score < Node.ConSelectedCandidateScore) {

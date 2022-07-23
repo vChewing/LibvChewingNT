@@ -107,7 +107,7 @@ public partial class KeyHandler {
     try {
       FileInfo theFile = new(path);
       using TextWriter outputStream = new StreamWriter(theFile.Open(FileMode.Truncate));
-      outputStream.Write(compositor.Grid.DumpDOT());
+      outputStream.Write(compositor.DumpDOT());
     } catch {
       Tools.PrintDebugIntel("Failed from writing GraphViz data.");
     }
@@ -123,10 +123,10 @@ public partial class KeyHandler {
   /// <returns></returns>
   private string CommitOverflownCompositionAndWalk() {
     string textToCommit = "";
-    if (compositor.Grid.Width > Prefs.ComposingBufferSize && walkedAnchors.Count > 0) {
+    if (compositor.Width > Prefs.ComposingBufferSize && walkedAnchors.Count > 0) {
       NodeAnchor anchor = walkedAnchors[0];
-      textToCommit = anchor.Node?.CurrentKeyValue.Value ?? "";
-      compositor.RemoveHeadReadings(anchor.SpanningLength);
+      textToCommit = anchor.Node.CurrentPair.Value;
+      compositor.RemoveHeadReadings(anchor.SpanLength);
     }
     Walk();
     return textToCommit;
@@ -155,22 +155,20 @@ public partial class KeyHandler {
     int adjustedIndex =
         Math.Max(0, Math.Min(ActualCandidateCursorIndex + (Prefs.UseRearCursorMode ? 1 : 0), CompositorLength));
     // 開始讓半衰模組觀察目前的狀況。
-    NodeAnchor selectedNode = compositor.Grid.FixNodeSelectedCandidate(adjustedIndex, value);
+    NodeAnchor selectedNode = compositor.FixNodeWithCandidateLiteral(value, adjustedIndex);
     // 不要針對逐字選字模式啟用臨時半衰記憶模型。
     if (!Prefs.UseSCPCTypingMode) {
       bool addToUOM = true;
       // 所有讀音數與字符數不匹配的情況均不得塞入半衰記憶模組。
-      if (selectedNode.SpanningLength != value.Length) {
-        Tools.PrintDebugIntel("UOM: SpanningLength != value.Count, dismissing.");
+      if (selectedNode.SpanLength != value.Length) {
+        Tools.PrintDebugIntel("UOM: SpanLength != value.Count, dismissing.");
         addToUOM = false;
       }
       if (addToUOM) {
-        if (selectedNode.Node != null) {
-          // 威注音的 SymbolLM 的 Score 是 -12，符合該條件的內容不得塞入半衰記憶模組。
-          if (selectedNode.Node?.ScoreFor(value) <= -12) {
-            Tools.PrintDebugIntel("UOM: Score <= -12, dismissing.");
-            addToUOM = false;
-          }
+        // 威注音的 SymbolLM 的 Score 是 -12，符合該條件的內容不得塞入半衰記憶模組。
+        if (selectedNode.Node.ScoreFor(value) <= -12) {
+          Tools.PrintDebugIntel("UOM: Score <= -12, dismissing.");
+          addToUOM = false;
         }
       }
       if (addToUOM) {
@@ -187,7 +185,7 @@ public partial class KeyHandler {
     if (!respectCursorPushing || !Prefs.MoveCursorAfterSelectingCandidate) return;
     int nextPosition = 0;
     foreach (NodeAnchor theAnchor in walkedAnchors.TakeWhile(theAnchor => nextPosition < adjustedIndex)) {
-      nextPosition += theAnchor.SpanningLength;
+      nextPosition += theAnchor.SpanLength;
     }
     if (nextPosition <= CompositorLength) CompositorCursorIndex = nextPosition;
   }
@@ -196,16 +194,15 @@ public partial class KeyHandler {
   /// 組字器內超出最大動態爬軌範圍的節錨都會被自動標記為「已經手動選字過」，減少爬軌運算負擔。
   /// </summary>
   private void MarkNodesFixedIfNecessary() {
-    int width = compositor.Grid.Width;
+    int width = compositor.Width;
     if (width <= kMaxComposingBufferNeedsToWalkSize) return;
     int index = 0;
     foreach (NodeAnchor theAnchor in walkedAnchors) {
-      if (theAnchor.Node == null) break;
       if (index >= width - kMaxComposingBufferNeedsToWalkSize) break;
       Node theNode = theAnchor.Node;
       if (theNode.Score < Node.ConSelectedCandidateScore)
-        compositor.Grid.FixNodeSelectedCandidate(index + theAnchor.SpanningLength, theNode.CurrentKeyValue.Value);
-      index += theAnchor.SpanningLength;
+        compositor.FixNodeWithCandidateLiteral(theNode.CurrentPair.Value, index + theAnchor.SpanLength);
+      index += theAnchor.SpanLength;
     }
   }
 
@@ -224,10 +221,10 @@ public partial class KeyHandler {
     if (arrAnchors.Count == 0) return arrCandidates;
 
     // 讓更長的節錨排序靠前。
-    arrAnchors = arrAnchors.OrderByDescending(a => a.KeyLength).ToList();
+    arrAnchors = arrAnchors.OrderByDescending(a => a.SpanLength).ToList();
 
     // 將節錨內的候選字詞資料拓印到輸出陣列內。
-    arrCandidates.AddRange(from theAnchor in arrAnchors where theAnchor.Node != null from theCandidate in theAnchor.Node!.Candidates select theCandidate.Value);
+    arrCandidates.AddRange(from theAnchor in arrAnchors from theCandidate in theAnchor.Node!.Candidates select theCandidate.Value);
     // 決定是否根據半衰記憶模組的建議來調整候選字詞的順序。
     if (!fixOrder && !Prefs.UseSCPCTypingMode && Prefs.FetchSuggestionsFromUserOverrideModel) {
       List<Unigram> arrSuggestedUnigrams = FetchSuggestedCandidates().OrderByDescending(a => a.Score).ToList();
@@ -265,7 +262,7 @@ public partial class KeyHandler {
     // 有的話就遵循之、讓天權星引擎對指定節錨下的節點複寫權重。
     if (!string.IsNullOrEmpty(overrideValue)) {
       Tools.PrintDebugIntel("UOM: Suggestion retrieved, overriding the node score of the selected candidate.");
-      compositor.Grid.OverrideNodeScoreForSelectedCandidate(
+      compositor.OverrideNodeScoreForSelectedCandidate(
           Math.Min(ActualCandidateCursorIndex + (Prefs.UseRearCursorMode ? 1 : 0), CompositorLength), overrideValue,
           FindHighestScore(RawAnchorsOfNodes, kEpsilon));
     } else {
@@ -280,7 +277,7 @@ public partial class KeyHandler {
   /// <param name="epsilon">半衰模組的衰減指數。</param>
   /// <returns>尋獲的最高權重數值。</returns>
   private double FindHighestScore(List<NodeAnchor> nodes, double epsilon) {
-    double highestScore = (from theAnchor in nodes where theAnchor.Node != null select theAnchor.Node!.HighestUnigramScore).Prepend(0).Max();
+    double highestScore = (from theAnchor in nodes select theAnchor.Node!.HighestUnigramScore).Prepend(0).Max();
     return highestScore + epsilon;
   }
 
@@ -385,8 +382,8 @@ public partial class KeyHandler {
   /// </summary>
   /// <value>原始節錨資料陣列</value>
   private List<NodeAnchor> RawAnchorsOfNodes => Prefs.UseRearCursorMode
-                                                    ? compositor.Grid.NodesBeginningAt(ActualCandidateCursorIndex)
-                                                    : compositor.Grid.NodesEndingAt(ActualCandidateCursorIndex);
+                                                    ? compositor.NodesBeginningAt(ActualCandidateCursorIndex)
+                                                    : compositor.NodesEndingAt(ActualCandidateCursorIndex);
 
   /// <summary>
   /// 將輸入法偏好設定同步至語言模組內。
@@ -421,15 +418,15 @@ public partial class KeyHandler {
   /// 在組字器的給定游標位置內插入讀音。
   /// </summary>
   /// <param name="reading">讀音。</param>
-  private void InsertToCompositorAtCursor(string reading) { compositor.InsertReadingAtCursor(reading); }
+  private void InsertToCompositorAtCursor(string reading) { compositor.InsertReading(reading); }
 
   /// <summary>
   /// 組字器的游標位置。
   /// </summary>
   /// <value>組字器的游標位置。</value>
   private int CompositorCursorIndex {
-    get => compositor.CursorIndex;
-    set => compositor.CursorIndex = value;
+    get => compositor.Cursor;
+    set => compositor.Cursor = value;
   }
 
   /// <summary>
@@ -441,12 +438,13 @@ public partial class KeyHandler {
   /// 在組字器內，朝著與文字輸入方向相反的方向、砍掉一個與游標相鄰的讀音。<br />
   /// 在威注音的術語體系當中，「與文字輸入方向相反的方向」為向後（Rear）。
   /// </summary>
-  private void DeleteCompositorReadingAtTheRearOfCursor() => compositor.DeleteReadingAtTheRearOfCursor();
+  private void DeleteCompositorReadingAtTheRearOfCursor() => compositor.DropReading(Compositor.TypingDirection.ToRear);
 
   /// <summary>
   /// 在組字器內，朝著往文字輸入方向、砍掉一個與游標相鄰的讀音。<br />
   /// 在威注音的術語體系當中，「文字輸入方向」為向前（Front）。
   /// </summary>
-  private void DeleteCompositorReadingToTheFrontOfCursor() => compositor.DeleteReadingToTheFrontOfCursor();
+  private void DeleteCompositorReadingToTheFrontOfCursor() =>
+      compositor.DropReading(Compositor.TypingDirection.ToFront);
 }
 }

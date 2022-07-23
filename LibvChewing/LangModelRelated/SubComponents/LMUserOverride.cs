@@ -99,7 +99,7 @@ public class LMUserOverride {
     int intLength = 0;
     foreach (NodeAnchor theAnchor in walkedAnchors) {
       arrNodes.Add(theAnchor);
-      intLength += theAnchor.SpanningLength;
+      intLength += theAnchor.SpanLength;
       if (intLength >= cursorIndex) break;
     }
 
@@ -107,9 +107,9 @@ public class LMUserOverride {
 
     arrNodes.Reverse();
 
-    Node? nodeCurrent = arrNodes[0].Node;
+    Node nodeCurrent = arrNodes[0].Node;
     if (nodeCurrent == null) return "";
-    KeyValuePaired kvCurrent = nodeCurrent.CurrentKeyValue;
+    KeyValuePaired kvCurrent = nodeCurrent.CurrentPair;
     if (arrEndingPunctuation.Contains(kvCurrent.Value)) return "";
 
     // 字音數與字數不一致的內容會被拋棄。
@@ -130,9 +130,9 @@ public class LMUserOverride {
                                      : trigramKey();
 
     if (arrNodes.Count >= 2) {
-      Node? nodePrevious = arrNodes[1].Node;
+      Node nodePrevious = arrNodes[1].Node;
       if (nodePrevious != null) {
-        kvPrevious = nodePrevious.CurrentKeyValue;
+        kvPrevious = nodePrevious.CurrentPair;
         if (!arrEndingPunctuation.Contains(kvPrevious.Value) &&
             kvPrevious.Key.Split('-').Length == U8Utils.GetU8Length(kvPrevious.Value)) {
           readingStack = kvPrevious.Key + "-" + readingStack;
@@ -141,9 +141,9 @@ public class LMUserOverride {
     }
 
     if (arrNodes.Count < 3) return result();
-    Node? nodeAnterior = arrNodes[2].Node;
+    Node nodeAnterior = arrNodes[2].Node;
     if (nodeAnterior == null) return result();
-    kvAnterior = nodeAnterior.CurrentKeyValue;
+    kvAnterior = nodeAnterior.CurrentPair;
     if (arrEndingPunctuation.Contains(kvAnterior.Value)) return result();
     if (kvAnterior.Key.Split('-').Length != U8Utils.GetU8Length(kvAnterior.Value)) return result();
     readingStack = kvAnterior.Key + "-" + readingStack;

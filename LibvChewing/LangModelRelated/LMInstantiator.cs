@@ -28,7 +28,7 @@ using Megrez;
 namespace LibvChewing {
 /// <summary>
 /// <para>語言模組副本化模組（LMInstantiator，下稱「LMI」）自身為符合天權星組字引擎內
-/// 的 LanguageModel 協定的模組、統籌且整理來自其它子模組的資料（包括使用者語彙、
+/// 的 LangModelProtocol 協定的模組、統籌且整理來自其它子模組的資料（包括使用者語彙、
 /// 繪文字模組、語彙濾除表、原廠語言模組等）。</para>
 /// <para>LMI 型別為與輸入法按鍵調度模組直接溝通之唯一語言模組。當組字器開始根據給定的
 /// 讀音鏈構築語句時，LMI 會接收來自組字器的讀音、輪流檢查自身是否有可以匹配到的
@@ -43,7 +43,7 @@ namespace LibvChewing {
 /// <para>LMI 會根據需要分別載入原廠語言模組和其他個別的子語言模組。LMI 本身不會記錄這些
 /// 語言模組的相關資料的存放位置，僅藉由參數來讀取相關訊息。</para>
 /// </summary>
-public class LMInstantiator : LanguageModel {
+public class LMInstantiator : LangModelProtocol {
   public static bool ShowDebugOutput = true;
   // 在函式內部用以記錄狀態的開關。
   public bool isPhraseReplacementEnabled = false;
@@ -132,7 +132,7 @@ public class LMInstantiator : LanguageModel {
   /// <param name="key">讀音索引鍵。</param>
   /// <param name="precedingKey">前述讀音索引鍵。</param>
   /// <returns>雙元圖陣列。</returns>
-  public List<Bigram> BigramsForKeys(string precedingKey, string key) { return new(); }
+  public List<Bigram> BigramsFor(string precedingKey, string key) { return new(); }
 
   /// <summary>
   /// 給定讀音字串，讓 LMI 給出對應的經過處理的單元圖陣列。
