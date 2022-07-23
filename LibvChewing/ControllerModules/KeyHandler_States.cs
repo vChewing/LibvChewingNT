@@ -577,6 +577,15 @@ public partial class KeyHandler {
         errorCallback(Error.OfNormal);
         stateCallback(state);
       }
+    } else if (input.IsAltHold()) {
+      // 游標跳轉動作無論怎樣都會執行，但如果出了執行失敗的結果的話則觸發報錯流程。
+      if (!compositor.JumpCursorBySpan(Compositor.TypingDirection.ToFront)) {
+        Tools.PrintDebugIntel("33C3B580");
+        errorCallback(Error.OfNormal);
+        stateCallback(state);
+        return true;
+      }
+      stateCallback(BuildInputtingState());
     } else {
       if (compositor.Cursor < CompositorLength) {
         compositor.Cursor += 1;
@@ -624,6 +633,15 @@ public partial class KeyHandler {
         errorCallback(Error.OfNormal);
         stateCallback(state);
       }
+    } else if (input.IsAltHold()) {
+      // 游標跳轉動作無論怎樣都會執行，但如果出了執行失敗的結果的話則觸發報錯流程。
+      if (!compositor.JumpCursorBySpan(Compositor.TypingDirection.ToRear)) {
+        Tools.PrintDebugIntel("8D50DD9E");
+        errorCallback(Error.OfNormal);
+        stateCallback(state);
+        return true;
+      }
+      stateCallback(BuildInputtingState());
     } else {
       if (compositor.Cursor > 0) {
         compositor.Cursor -= 1;
