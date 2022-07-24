@@ -74,7 +74,7 @@ public class LMInstantiator : LangModelProtocol {
   // Reverse 的話，第一欄是注音，第二欄是對應的漢字，第三欄是可能的權重。
   // 不 Reverse 的話，第一欄是漢字，第二欄是對應的注音，第三欄是可能的權重。
   public LMCore ulmPhrases =
-      new(shouldReverse: true, shouldConsolidate: true, defaultScore: 0, shouldForceDefaultScore: true);
+      new(shouldReverse: true, shouldConsolidate: true, defaultScore: 0, shouldForceDefaultScore: false);
   public LMCore ulmFiltered =
       new(shouldReverse: true, shouldConsolidate: true, defaultScore: 0, shouldForceDefaultScore: true);
   public LMCore ulmSymbols =
