@@ -161,7 +161,7 @@ public partial class KeyHandler {
       // 如果輸入法的辭典索引是漢語拼音的話，要注意上一行拿到的內容得是漢語拼音。
 
       // 向語言模型詢問是否有對應的記錄。
-      if (!IfLangModelHasUnigramsFor(readingKey)) {
+      if (!currentLM.HasUnigramsFor(readingKey)) {
         Tools.PrintDebugIntel($"B49C0979：語彙庫內無「{readingKey}」的匹配記錄。");
         errorCallback(Error.OfNormal);
         composer.Clear();
@@ -171,7 +171,7 @@ public partial class KeyHandler {
       }
 
       // 將該讀音插入至組字器內的軌格當中。
-      InsertToCompositorAtCursor(reading: readingKey);
+      compositor.InsertReading(reading: readingKey);
 
       // 讓組字器反爬軌格。
       string textToCommit = CommitOverflownCompositionAndWalk();
@@ -232,7 +232,7 @@ public partial class KeyHandler {
       if (input.IsSpace()) {
         // 倘若沒有在偏好設定內將 Space 空格鍵設為選字窗呼叫用鍵的話………
         if (!Prefs.ChooseCandidateUsingSpace) {
-          if (compositor.Cursor >= CompositorLength) {
+          if (compositor.Cursor >= compositor.Length) {
             string composingBuffer = currentState.ComposingBuffer;
             if (string.IsNullOrEmpty(composingBuffer)) {
               stateCallback(new InputState.Committing(composingBuffer));
@@ -240,8 +240,8 @@ public partial class KeyHandler {
             Clear();
             stateCallback(new InputState.Committing(textToCommit: " "));
             stateCallback(new InputState.Empty());
-          } else if (IfLangModelHasUnigramsFor(" ")) {
-            InsertToCompositorAtCursor(" ");
+          } else if (currentLM.HasUnigramsFor(" ")) {
+            compositor.InsertReading(" ");
             string textToCommit = CommitOverflownCompositionAndWalk();
             InputState.Inputting inputting = BuildInputtingState();
             inputting.TextToCommit = textToCommit;
@@ -299,9 +299,9 @@ public partial class KeyHandler {
 
     if (input.IsAbsorbedArrowKey() || input.IsExtraChooseCandidateKey() || input.IsExtraChooseCandidateKeyReverse()) {
       if (input.IsAltHold() && state is InputState.Inputting) {
-        if (input.IsExtraChooseCandidateKey()) 
+        if (input.IsExtraChooseCandidateKey())
           return HandleInlineCandidateRotation(state, false, stateCallback, errorCallback);
-        if (input.IsExtraChooseCandidateKeyReverse()) 
+        if (input.IsExtraChooseCandidateKeyReverse())
           return HandleInlineCandidateRotation(state, true, stateCallback, errorCallback);
       }
       return HandleAbsorbedArrowKey(state, stateCallback, errorCallback);
@@ -329,13 +329,13 @@ public partial class KeyHandler {
 
     if (input.IsSymbolMenuPhysicalKey() && !input.IsShiftHold()) {
       if (input.IsAltHold()) {
-        if (IfLangModelHasUnigramsFor("_punctuation_list")) {
+        if (currentLM.HasUnigramsFor("_punctuation_list")) {
           // 不要在注音沒敲完整的情況下叫出統合符號選單。
           if (!composer.IsEmpty) {
             Tools.PrintDebugIntel("17446655");
             errorCallback(Error.OfNormal);
           } else {
-            InsertToCompositorAtCursor(reading: "_punctuation_list");
+            compositor.InsertReading(reading: "_punctuation_list");
             string textToCommit = CommitOverflownCompositionAndWalk();
             InputState.Inputting inputting = BuildInputtingState();
             inputting.TextToCommit = textToCommit;

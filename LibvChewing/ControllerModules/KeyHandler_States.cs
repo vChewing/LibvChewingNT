@@ -256,7 +256,7 @@ public partial class KeyHandler {
   /// <returns>告知 IMK「該按鍵是否已經被輸入法攔截處理」。</returns>
   private bool HandlePunctuation(string customPunctuation, InputStateProtocol state, bool isTypingVertical,
                                  Action<InputStateProtocol> stateCallback, Action<Error> errorCallback) {
-    if (IfLangModelHasUnigramsFor(customPunctuation)) return false;
+    if (currentLM.HasUnigramsFor(customPunctuation)) return false;
 
     if (!composer.IsEmpty) {
       // 注音沒敲完的情況下，無視標點輸入。
@@ -266,7 +266,7 @@ public partial class KeyHandler {
       return true;
     }
 
-    InsertToCompositorAtCursor(customPunctuation);
+    compositor.InsertReading(customPunctuation);
     string textToCommit = CommitOverflownCompositionAndWalk();
     InputState.Inputting inputting = BuildInputtingState();
     inputting.TextToCommit = textToCommit;
@@ -316,7 +316,7 @@ public partial class KeyHandler {
   /// <returns>將按鍵行為「是否有處理掉」藉由 ctlInputMethod 回報給 IMK。</returns>
   private bool HandleCtrlCommandEnter(InputStateProtocol state, Action<InputStateProtocol> stateCallback) {
     if (state is not InputState.Inputting) return false;
-    string composingBuffer = string.Join("-", CurrentReadings);
+    string composingBuffer = string.Join("-", compositor.Readings);
     if (Prefs.InlineDumpPinyinInLieuOfZhuyin) {
       composingBuffer = Shared.RestoreToneOneInZhuyinKey(composingBuffer);  // 恢復陰平標記
       composingBuffer = Shared.CnvPhonaToHanyuPinyin(composingBuffer);      // 注音轉拼音
@@ -383,7 +383,7 @@ public partial class KeyHandler {
       composer.Clear();
     else if (composer.IsEmpty) {
       if (compositor.Cursor > 0) {
-        DeleteCompositorReadingAtTheRearOfCursor();
+        compositor.DropReading(Compositor.TypingDirection.ToRear);
         Walk();
       } else {
         Tools.PrintDebugIntel("9D69908D");
@@ -420,14 +420,14 @@ public partial class KeyHandler {
       return true;
     }
 
-    if (compositor.Cursor == CompositorLength) {
+    if (compositor.Cursor == compositor.Length) {
       Tools.PrintDebugIntel("9B69938D");
       errorCallback(Error.OfNormal);
       stateCallback(state);
       return true;
     }
 
-    DeleteCompositorReadingToTheFrontOfCursor();
+    compositor.DropReading(Compositor.TypingDirection.ToFront);
     Walk();
     InputState.Inputting inputting = BuildInputtingState();
     stateCallback(string.IsNullOrEmpty(inputting.ComposingBuffer) ? new InputState.EmptyIgnorePreviousState()
@@ -507,8 +507,8 @@ public partial class KeyHandler {
       return true;
     }
 
-    if (compositor.Cursor != CompositorLength) {
-      compositor.Cursor = CompositorLength;
+    if (compositor.Cursor != compositor.Length) {
+      compositor.Cursor = compositor.Length;
       stateCallback(BuildInputtingState());
     } else {
       Tools.PrintDebugIntel("9B69908E");
@@ -571,7 +571,7 @@ public partial class KeyHandler {
       if (currentState.CursorIndex < currentState.ComposingBuffer.Length) {
         int nextPosition = U8Utils.GetU16NextPositionFor(currentState.ComposingBuffer, currentState.CursorIndex);
         InputState.Marking marking = new(currentState.ComposingBuffer, currentState.CursorIndex, nextPosition,
-                                         CurrentReadings) { TooltipForInputting = currentState.Tooltip };
+                                         compositor.Readings) { TooltipForInputting = currentState.Tooltip };
         stateCallback(marking);
       } else {
         Tools.PrintDebugIntel("BB7F6DB9");
@@ -589,7 +589,7 @@ public partial class KeyHandler {
       }
       stateCallback(BuildInputtingState());
     } else {
-      if (compositor.Cursor < CompositorLength) {
+      if (compositor.Cursor < compositor.Length) {
         compositor.Cursor += 1;
         stateCallback(BuildInputtingState());
       } else {
@@ -628,7 +628,7 @@ public partial class KeyHandler {
       if (currentState.CursorIndex > 0) {
         int nextPosition = U8Utils.GetU16PreviousPositionFor(currentState.ComposingBuffer, currentState.CursorIndex);
         InputState.Marking marking = new(currentState.ComposingBuffer, currentState.CursorIndex, nextPosition,
-                                         CurrentReadings) { TooltipForInputting = currentState.Tooltip };
+                                         compositor.Readings) { TooltipForInputting = currentState.Tooltip };
         stateCallback(marking);
       } else {
         Tools.PrintDebugIntel("D326DEA3");
@@ -697,7 +697,7 @@ public partial class KeyHandler {
 
     int length = 0;
     NodeAnchor currentAnchor = new(node: new());
-    int cursorIndex = Math.Min(ActualCandidateCursorIndex + (Prefs.UseRearCursorMode ? 1 : 0), CompositorLength);
+    int cursorIndex = Math.Min(ActualCandidateCursorIndex + (Prefs.UseRearCursorMode ? 1 : 0), compositor.Length);
     foreach (NodeAnchor anchor in walkedAnchors) {
       length += anchor.SpanLength;
       if (length >= cursorIndex) {

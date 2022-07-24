@@ -92,7 +92,7 @@ public partial class KeyHandler {
   /// </summary>
   /// <returns>實際上的游標位址。</returns>
   private int ActualCandidateCursorIndex =>
-      Prefs.UseRearCursorMode ? Math.Min(compositor.Cursor, CompositorLength - 1) : Math.Max(compositor.Cursor, 1);
+      Prefs.UseRearCursorMode ? Math.Min(compositor.Cursor, compositor.Length - 1) : Math.Max(compositor.Cursor, 1);
 
   /// <summary>
   /// 利用給定的讀音鏈來試圖爬取最接近的組字結果（最大相似度估算）。<br />
@@ -153,7 +153,7 @@ public partial class KeyHandler {
   private void FixNode((string, string)candidate, bool respectCursorPushing = true) {
     KeyValuePaired theCandidate = new(key: candidate.Item1, value: candidate.Item2);
     int adjustedIndex =
-        Math.Max(0, Math.Min(ActualCandidateCursorIndex + (Prefs.UseRearCursorMode ? 1 : 0), CompositorLength));
+        Math.Max(0, Math.Min(ActualCandidateCursorIndex + (Prefs.UseRearCursorMode ? 1 : 0), compositor.Length));
     // 開始讓半衰模組觀察目前的狀況。
     NodeAnchor selectedNode = compositor.FixNodeWithCandidate(theCandidate, adjustedIndex);
     // 不要針對逐字選字模式啟用臨時半衰記憶模型。
@@ -264,7 +264,7 @@ public partial class KeyHandler {
     if (!string.IsNullOrEmpty(overrideValue)) {
       Tools.PrintDebugIntel("UOM: Suggestion retrieved, overriding the node score of the selected candidate.");
       compositor.OverrideNodeScoreForSelectedCandidate(
-          Math.Min(ActualCandidateCursorIndex + (Prefs.UseRearCursorMode ? 1 : 0), CompositorLength), overrideValue,
+          Math.Min(ActualCandidateCursorIndex + (Prefs.UseRearCursorMode ? 1 : 0), compositor.Length), overrideValue,
           FindHighestScore(RawAnchorsOfNodes, kEpsilon));
     } else {
       Tools.PrintDebugIntel("UOM: Blank suggestion retrieved, dismissing.");
@@ -403,42 +403,6 @@ public partial class KeyHandler {
     // 每個漢字讀音都由一個西文半形減號分隔開。
     compositor = new(currentLM, length: 20, separator: "-");
   }
-
-  /// <summary>
-  /// 自組字器獲取目前的讀音陣列。
-  /// </summary>
-  private List<string> CurrentReadings => compositor.Readings;
-
-  /// <summary>
-  /// 以給定的（讀音）索引鍵，來檢測當前主語言模型內是否有對應的資料在庫。
-  /// </summary>
-  /// <param name="key">給定的（讀音）索引鍵。</param>
-  /// <returns>若有在庫，則返回 true。</returns>
-  private bool IfLangModelHasUnigramsFor(string key) => currentLM.HasUnigramsFor(key);
-
-  /// <summary>
-  /// 在組字器的給定游標位置內插入讀音。
-  /// </summary>
-  /// <param name="reading">讀音。</param>
-  private void InsertToCompositorAtCursor(string reading) { compositor.InsertReading(reading); }
-
-  /// <summary>
-  /// 組字器的目前的長度。
-  /// </summary>
-  private int CompositorLength => compositor.Length;
-
-  /// <summary>
-  /// 在組字器內，朝著與文字輸入方向相反的方向、砍掉一個與游標相鄰的讀音。<br />
-  /// 在威注音的術語體系當中，「與文字輸入方向相反的方向」為向後（Rear）。
-  /// </summary>
-  private void DeleteCompositorReadingAtTheRearOfCursor() => compositor.DropReading(Compositor.TypingDirection.ToRear);
-
-  /// <summary>
-  /// 在組字器內，朝著往文字輸入方向、砍掉一個與游標相鄰的讀音。<br />
-  /// 在威注音的術語體系當中，「文字輸入方向」為向前（Front）。
-  /// </summary>
-  private void DeleteCompositorReadingToTheFrontOfCursor() =>
-      compositor.DropReading(Compositor.TypingDirection.ToFront);
 
   /// <summary>
   /// 生成標點符號索引鍵。

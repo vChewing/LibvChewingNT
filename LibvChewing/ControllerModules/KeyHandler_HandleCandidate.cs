@@ -285,12 +285,12 @@ public partial class KeyHandler {
       string punctuation = punctuationNamePrefix() + Convert.ToChar(charCode);
 
       bool shouldAutoSelectCandidate = composer.InputValidityCheck(charCode) ||
-                                       IfLangModelHasUnigramsFor(customPunctuation) ||
-                                       IfLangModelHasUnigramsFor(punctuation);
+                                       currentLM.HasUnigramsFor(customPunctuation) ||
+                                       currentLM.HasUnigramsFor(punctuation);
 
       if (!shouldAutoSelectCandidate && input.IsUpperCaseASCIILetterKey()) {
         string letter = "_letter_" + (char)charCode;
-        if (IfLangModelHasUnigramsFor(letter)) shouldAutoSelectCandidate = true;
+        if (currentLM.HasUnigramsFor(letter)) shouldAutoSelectCandidate = true;
       }
 
       if (shouldAutoSelectCandidate) {
