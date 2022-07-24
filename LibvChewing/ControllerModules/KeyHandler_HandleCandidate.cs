@@ -65,11 +65,6 @@ public partial class KeyHandler {
     // MARK: Enter
 
     if (input.IsEnter()) {
-      if (state is InputState.AssociatedPhrases) {
-        Clear();
-        stateCallback(new InputState.EmptyIgnorePreviousState());
-        return true;
-      }
       theDelegate?.KeyHandler(this, ctlCandidateCurrent.SelectedCandidatedIndex, ctlCandidateCurrent);
       return true;
     }
