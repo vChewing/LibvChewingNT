@@ -49,6 +49,18 @@ public struct LMAssociates {
   public LMAssociates() {}
 
   /// <summary>
+  /// 內部函數，用來將含有漢語拼音的辭典索引鍵轉乘含有漢語注音的辭典索引鍵。
+  /// </summary>
+  /// <param name="target">要轉換的對象。</param>
+  /// <returns>轉換結果。</returns>
+  private string CnvNGramKeyFromPinyinToPhona(string target) {
+    if (!target.Contains('(') || !target.Contains(',') || !target.Contains(')')) return target;
+    string[] arrTarget = target.Substring(1, target.Length - 2).Split(',');
+    return arrTarget.Length == 2 ? $"({Tekkon.Shared.CnvHanyuPinyinToPhona(target: arrTarget[0])},{arrTarget[1]})"
+                                 : target;
+  }
+
+  /// <summary>
   /// 將資料從檔案讀入至資料庫陣列內。
   /// </summary>
   /// <param name="path">給定路徑。</param>
@@ -70,7 +82,7 @@ public struct LMAssociates {
           if (fields.Length < 2) continue;
           if (fields[0].First() == '#') continue;
           if (fields[0].Length == 0 || fields[1].Length == 0) continue;
-          string strKey = fields[0];
+          string strKey = CnvNgramKeyFromPinyinToPhona(target: fields[0]);
           string strValue = fields[1];
           if (!_rangeMap.ContainsKey(strKey)) _rangeMap[strKey] = new();  // 給缺失的記錄位置先插一個空白陣列。
           _rangeMap[strKey].Add(strValue);
