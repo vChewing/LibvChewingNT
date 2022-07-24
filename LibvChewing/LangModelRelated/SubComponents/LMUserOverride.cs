@@ -31,8 +31,9 @@ public class LMUserOverride {
   private double _decayExponent;
   private LinkedList<KeyObservationPair> _LRUList = new();
   private Dictionary<string, KeyObservationPair> _LRUMap = new();
-  private const double ConDecayThreshold = 1.0 / 1048576.0;
-  public LMUserOverride(int capacity = 500, double decayConstant = 5400) {
+  private const double ConDecayThreshold = 1.0 / 1048576.0;      // 衰減二十次之後差不多就失效了。
+  private const double ConObservedOverrideHalfLife = 3600.0 * 6; // 6 小時半衰一次，能持續不到六天的記憶。
+  public LMUserOverride(int capacity = 500, double decayConstant = ConObservedOverrideHalfLife) {
     _capacity = Math.Max(1, capacity);
     _decayExponent = Math.Log(0.5) / decayConstant;
   }
