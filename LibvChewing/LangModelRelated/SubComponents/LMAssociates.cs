@@ -82,10 +82,15 @@ public struct LMAssociates {
           if (fields.Length < 2) continue;
           if (fields[0].First() == '#') continue;
           if (fields[0].Length == 0 || fields[1].Length == 0) continue;
-          string strKey = CnvNgramKeyFromPinyinToPhona(target: fields[0]);
-          string strValue = fields[1];
-          if (!_rangeMap.ContainsKey(strKey)) _rangeMap[strKey] = new();  // 給缺失的記錄位置先插一個空白陣列。
-          _rangeMap[strKey].Add(strValue);
+          string strKey = CnvNGramKeyFromPinyinToPhona(target: fields[0]);
+          foreach (var cell in fields.Select((value, i) => new { i, value })) {
+            if (cell.i == 0) continue;
+            if (string.IsNullOrEmpty(cell.value)) continue;
+            if (cell.value[0] == '#') continue;
+            string strValue = cell.value;
+            if (!_rangeMap.ContainsKey(strKey)) _rangeMap[strKey] = new();  // 給缺失的記錄位置先插一個空白陣列。
+            _rangeMap[strKey].Add(strValue);
+          }
         }
       }
       if (_rangeMap.Count == 0) {
