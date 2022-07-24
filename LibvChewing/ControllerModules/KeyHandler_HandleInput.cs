@@ -157,12 +157,12 @@ public partial class KeyHandler {
       // 補上空格，否則倚天忘形與許氏排列某些音無法響應不了陰平聲調。
       // 小麥注音因為使用 OVMandarin，所以不需要這樣補。但鐵恨引擎對所有聲調一視同仁。
       if (input.IsSpace() && !composer.HasToneMarker()) composer.ReceiveKey(input: " ");
-      string reading = composer.GetComposition();  // 拿取用來進行索引檢索用的注音。
+      string readingKey = composer.GetComposition();  // 拿取用來進行索引檢索用的注音。
       // 如果輸入法的辭典索引是漢語拼音的話，要注意上一行拿到的內容得是漢語拼音。
 
       // 向語言模型詢問是否有對應的記錄。
-      if (!IfLangModelHasUnigramsFor(reading)) {
-        Tools.PrintDebugIntel($"B49C0979：語彙庫內無「{reading}」的匹配記錄。");
+      if (!IfLangModelHasUnigramsFor(readingKey)) {
+        Tools.PrintDebugIntel($"B49C0979：語彙庫內無「{readingKey}」的匹配記錄。");
         errorCallback(Error.OfNormal);
         composer.Clear();
         // 根據「組字器是否為空」來判定回呼哪一種狀態。
@@ -171,7 +171,7 @@ public partial class KeyHandler {
       }
 
       // 將該讀音插入至組字器內的軌格當中。
-      InsertToCompositorAtCursor(reading: reading);
+      InsertToCompositorAtCursor(reading: readingKey);
 
       // 讓組字器反爬軌格。
       string textToCommit = CommitOverflownCompositionAndWalk();
@@ -196,13 +196,14 @@ public partial class KeyHandler {
         if (choosingCandidates.Candidates.Count == 1) {
           Clear();
           string text = choosingCandidates.Candidates[0].Item2;
+          string reading = choosingCandidates.Candidates[0].Item1;
           stateCallback(new InputState.Committing(textToCommit: text));
 
           if (!Prefs.AssociatedPhrasesEnabled)
             stateCallback(new InputState.Empty());
           else {
             InputState.AssociatedPhrases associatedPhrases =
-                BuildAssociatePhraseStateWith(text, input.IsTypingVertical);
+                BuildAssociatePhraseStateWith(new(reading, text), input.IsTypingVertical);
             stateCallback(associatedPhrases.Candidates.Count > 0 ? associatedPhrases : new InputState.Empty());
           }
         } else {
@@ -304,6 +305,7 @@ public partial class KeyHandler {
           return HandleInlineCandidateRotation(state, true, stateCallback, errorCallback);
       }
       return HandleAbsorbedArrowKey(state, stateCallback, errorCallback);
+    }
 
     // MARK: BackSpace
 

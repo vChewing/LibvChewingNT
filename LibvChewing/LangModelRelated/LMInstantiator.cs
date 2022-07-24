@@ -185,12 +185,12 @@ public class LMInstantiator : LangModelProtocol {
     return UnigramsFor(key).Count != 0;
   }
 
-  public List<string> AssociatedPhrasesForKey(string key) {
-    List<string> result = ulmAssociates.EntriesFor(key: key);
+  public List<string> AssociatedPhrasesForPair(KeyValuePaired pair) {
+    List<string> result = ulmAssociates.EntriesFor(pair: pair);
     return result.Count == 0 ? new() : result;
   }
 
-  public bool HasAssociatedPhrasesForKey(string key) => ulmAssociates.HasEntriesFor(key: key);
+  public bool HasAssociatedPhrasesForPair(KeyValuePaired pair) => ulmAssociates.HasEntriesFor(pair: pair);
 
   // MARK: - 核心函式（對內）
 

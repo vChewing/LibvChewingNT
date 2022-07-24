@@ -22,6 +22,7 @@ IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN
 CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 */
 
+using Megrez;
 using Microsoft.VisualBasic.FileIO;
 
 namespace LibvChewing {
@@ -114,17 +115,23 @@ public struct LMAssociates {
   // MARK: - Advanced features
 
   /// <summary>
-  /// 根據給定的索引鍵，獲取聯想字詞字串陣列。
+  /// 根據給定的字音配對索引鍵，獲取聯想字詞字串陣列。
   /// </summary>
-  /// <param name="key">索引鍵。</param>
+  /// <param name="pair">字音配對索引鍵。</param>
   /// <returns>聯想字詞字串陣列。</returns>
-  public List<string> EntriesFor(string key) { return _rangeMap.ContainsKey(key) ? _rangeMap[key] : new(); }
+  public List<string> EntriesFor(KeyValuePaired pair) {
+    List<string> result = new();
+    if (_rangeMap.ContainsKey(pair.ToNGramKey())) result.AddRange(_rangeMap[pair.ToNGramKey()]);
+    if (_rangeMap.ContainsKey(pair.Value)) result.AddRange(_rangeMap[pair.Value]);
+    return result.Distinct().ToList();
+  }
 
   /// <summary>
-  /// 根據給定的索引鍵來確認資料庫陣列內是否存在對應的資料。
+  /// 根據給定的字音配對索引鍵來確認資料庫陣列內是否存在對應的資料。
   /// </summary>
-  /// <param name="key">索引鍵。</param>
+  /// <param name="pair">字音配對索引鍵。</param>
   /// <returns>是否在庫。</returns>
-  public bool HasEntriesFor(string key) => _rangeMap.ContainsKey(key);
+  public bool HasEntriesFor(KeyValuePaired pair) =>
+      _rangeMap.ContainsKey(pair.ToNGramKey()) || _rangeMap.ContainsKey(pair.Value);
 }
 }

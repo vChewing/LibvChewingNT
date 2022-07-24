@@ -134,12 +134,12 @@ public partial class KeyHandler {
   /// <summary>
   /// 用以組建聯想詞陣列的函式。
   /// </summary>
-  /// <param name="key">給定的聯想詞的開頭字。</param>
+  /// <param name="pair">給定的聯想詞的開頭字。</param>
   /// <returns>抓取到的聯想詞陣列。不會是 nil，但那些負責接收結果的函式會對空白陣列結果做出正確的處理。</returns>
-  private List<(string, string)> BuildAssociatePhraseArrayWith(string key) {
+  private List<(string, string)> BuildAssociatePhraseArrayWith(Megrez.KeyValuePaired pair) {
     List<string> arrResult = new();
-    if (currentLM.HasAssociatedPhrasesForKey(key)) {
-      arrResult.AddRange(currentLM.AssociatedPhrasesForKey(key));
+    if (currentLM.HasAssociatedPhrasesForPair(pair)) {
+      arrResult.AddRange(currentLM.AssociatedPhrasesForPair(pair));
     }
     return arrResult.Select(neta => ("", neta)).ToList();
   }
@@ -166,7 +166,7 @@ public partial class KeyHandler {
       }
       if (addToUOM) {
         // 威注音的 SymbolLM 的 Score 是 -12，符合該條件的內容不得塞入半衰記憶模組。
-        if (selectedNode.Node.ScoreFor(theCandidate.Value) <= -12) {
+        if (selectedNode.Node.ScoreForPaired(theCandidate) <= -12) {
           Tools.PrintDebugIntel("UOM: Score <= -12, dismissing.");
           addToUOM = false;
         }

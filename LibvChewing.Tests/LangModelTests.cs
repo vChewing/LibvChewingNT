@@ -171,11 +171,11 @@ public class LangModelTests {
     lmTest.Open("../../../files4test/associatedPhrases-test.txt");
     // Console.WriteLine("（在庫詞條數：{0}）", lmTest.Count);
     Assert.NotZero(lmTest.Count);
-    const string key = "天";
+    KeyValuePaired key = new(key: "", value: "天");
     Assert.True(lmTest.HasEntriesFor(key));
     // Console.WriteLine(" - LMAssociates: 在庫確認：{0}", key);
     IEnumerable<string> arrResult = lmTest.EntriesFor(key);
-    string strResult = arrResult.Aggregate("", (current, neta) => current + key + neta + " ");
+    string strResult = arrResult.Aggregate("", (current, neta) => current + key.Value + neta + " ");
     strResult = strResult.Remove(strResult.Length - 1);
     Assert.That(strResult, Is.EqualTo("天涼好個秋 天天向上"));
     Console.WriteLine(" - LMAssociates 成功找出關聯：「{0}」開頭的詞 => {1}", key, strResult);

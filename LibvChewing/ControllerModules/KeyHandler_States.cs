@@ -173,11 +173,11 @@ public partial class KeyHandler {
   /// 函式時以回傳結果類型判斷作為合法性判斷依據的函式，全都將依據改為檢查傳
   /// 回的陣列是否為空：如果陣列為空的話，直接回呼一個空狀態。
   /// </summary>
-  /// <param name="key">給定的索引鍵（也就是給定的聯想詞的開頭字）。</param>
+  /// <param name="pair">給定的索引鍵（也就是給定的聯想詞的開頭字）。</param>
   /// <param name="isTypingVertical">是否縱排輸入？</param>
   /// <returns>回呼一個新的聯想詞狀態，來就給定的聯想詞陣列資料內容顯示選字窗。</returns>
-  private InputState.AssociatedPhrases BuildAssociatePhraseStateWith(string key, bool isTypingVertical) =>
-      new(BuildAssociatePhraseArrayWith(key), isTypingVertical);
+  private InputState.AssociatedPhrases BuildAssociatePhraseStateWith(KeyValuePaired pair, bool isTypingVertical) =>
+      new(BuildAssociatePhraseArrayWith(pair), isTypingVertical);
 
   // MARK: - 用以處理就地新增自訂語彙時的行為
 
