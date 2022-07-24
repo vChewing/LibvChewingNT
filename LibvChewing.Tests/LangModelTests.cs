@@ -111,8 +111,8 @@ public class LangModelTests {
     lmTest.Open("../../../files4test/data-test-plaintext.txt");
     // Console.WriteLine("（在庫詞條數：{0}）", lmTest.Count);
     Assert.NotZero(lmTest.Count);
-    const string keyA = "gao1ke1ji4";
-    const string keyB = "gong1si1";
+    const string keyA = "ㄍㄠㄎㄜㄐㄧˋ";
+    const string keyB = "ㄍㄨㄥㄙ";
     Assert.True(lmTest.HasUnigramsFor(keyA));
     // Console.WriteLine(" - LMCore-A: 在庫確認：{0}", keyA);
     Assert.True(lmTest.HasUnigramsFor(keyB));
