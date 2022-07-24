@@ -100,6 +100,7 @@ public struct LMCore : LangModelProtocol {
           if (fields.Length < 2) continue;
           if (fields[0].First() == '#') continue;
           if (fields[0].Length == 0 || fields[1].Length == 0) continue;
+          if (fields.Length >= 3 && fields[2].Contains('#')) fields[2] = "";
           string strKey = _shouldReverse ? fields[1] : fields[0];
           string strValue = _shouldReverse ? fields[0] : fields[1];
           double dblScore = fields.Length < 3 || _shouldForceDefaultScore ? _defaultScore : CnvToDoubleScore(fields[2]);
