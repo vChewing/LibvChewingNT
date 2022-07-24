@@ -31,8 +31,8 @@ public class LMUserOverride {
   private double _decayExponent;
   private LinkedList<KeyObservationPair> _LRUList = new();
   private Dictionary<string, KeyObservationPair> _LRUMap = new();
-  private const double ConDecayThreshold = 1.0 / 1048576.0;      // 衰減二十次之後差不多就失效了。
-  private const double ConObservedOverrideHalfLife = 3600.0 * 6; // 6 小時半衰一次，能持續不到六天的記憶。
+  private const double ConDecayThreshold = 1.0 / 1048576.0;       // 衰減二十次之後差不多就失效了。
+  private const double ConObservedOverrideHalfLife = 3600.0 * 6;  // 6 小時半衰一次，能持續不到六天的記憶。
   public LMUserOverride(int capacity = 500, double decayConstant = ConObservedOverrideHalfLife) {
     _capacity = Math.Max(1, capacity);
     _decayExponent = Math.Log(0.5) / decayConstant;
@@ -40,9 +40,12 @@ public class LMUserOverride {
   public void Observe(List<NodeAnchor> walkedAnchors, int cursorIndex, string candidate, double timestamp) {
     string key = ConvertKeyFrom(walkedAnchors, cursorIndex);
     if (_LRUMap.ContainsKey(key)) {
-      _LRUMap[key].Observation.Update(candidate, timestamp);
-      _LRUList.AddFirst(_LRUMap[key]);
-      if (ShowDebugOutput) Console.WriteLine($"UOM: Observation finished with existing observation: {key}");
+      Suggest(walkedAnchors, cursorIndex, timestamp, delegate(bool shouldUpdate) {
+        if (!shouldUpdate) return;
+        _LRUMap[key].Observation.Update(candidate, timestamp);
+        _LRUList.AddFirst(_LRUMap[key]);
+        if (ShowDebugOutput) Console.WriteLine($"UOM: Observation finished with existing observation: {key}");
+      });
     } else {
       Observation observation = new();
       observation.Update(candidate, timestamp);
@@ -57,7 +60,8 @@ public class LMUserOverride {
     }
   }
 
-  public List<Unigram> Suggest(List<NodeAnchor> walkedAnchors, int cursorIndex, double timestamp) {
+  public List<Unigram> Suggest(List<NodeAnchor> walkedAnchors, int cursorIndex, double timestamp,
+                               Action<bool> decayCallback = null) {
     string key = ConvertKeyFrom(walkedAnchors, cursorIndex);
     string currentReadingKey = ConvertKeyFrom(walkedAnchors, cursorIndex, readingOnly: true);
     if (!_LRUMap.ContainsKey(key)) {
@@ -71,10 +75,13 @@ public class LMUserOverride {
     foreach ((string suggestedCandidate, Override theOverride) in observation.Overrides) {
       double overrideScore = GetScore(eventCount: theOverride.Count, totalCount: observation.Count,
                                       eventTimestamp: theOverride.Timestamp, timestamp, lambda: _decayExponent);
-      if (overrideScore == 0) {
-        continue;
-      }
       if (overrideScore <= currentHighScore || string.IsNullOrEmpty(suggestedCandidate)) continue;
+
+      double overrideDetectionScore =
+          GetScore(eventCount: theOverride.Count, totalCount: observation.Count, eventTimestamp: theOverride.Timestamp,
+                   timestamp, lambda: _decayExponent * 2);
+      if (overrideDetectionScore <= currentHighScore) decayCallback(true);
+
       Unigram suggestedUnigram = new(new(currentReadingKey, suggestedCandidate), overrideScore);
       arrResults.Insert(0, suggestedUnigram);
       currentHighScore = overrideScore;
