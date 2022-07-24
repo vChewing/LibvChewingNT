@@ -60,6 +60,7 @@ public struct LMAssociates {
     LMConsolidator.FixEOF(path);
     LMConsolidator.Consolidate(path, shouldCheckPragma: true);
     try {
+      // Visual Basic 套件內的 TextFieldParser 應該會自動處理 CRLF。
       using (TextFieldParser parser = new(path)) {
         parser.TextFieldType = FieldType.Delimited;
         parser.SetDelimiters(" ");
