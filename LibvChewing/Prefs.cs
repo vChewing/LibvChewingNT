@@ -70,5 +70,6 @@ public partial struct Prefs {
   public static bool EscToCleanInputBuffer = true;
   public static bool AssociatedPhrasesEnabled = false;
   public static bool ChooseCandidateUsingSpace = true;
+  public static bool AutoCorrectReadingCombination = true;
 }
 }

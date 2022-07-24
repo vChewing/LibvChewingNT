@@ -333,6 +333,7 @@ public partial class KeyHandler {
         break;
     }
     composer.Clear();
+    composer.PhonabetCombinationCorrectionEnabled = Prefs.AutoCorrectReadingCombination;
   }
 
   /// <summary>
