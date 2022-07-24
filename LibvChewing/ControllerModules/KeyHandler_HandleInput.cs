@@ -224,7 +224,7 @@ public partial class KeyHandler {
 
     // MARK: 用上下左右鍵呼叫選字窗 (Calling candidate window using Up / Down or PageUp / PageDn.)
 
-    if (state is InputState.NotEmpty currentState && composer.IsEmpty &&
+    if (state is InputState.NotEmpty currentState && composer.IsEmpty && !input.IsAltHold() &&
         (input.IsExtraChooseCandidateKey() || input.IsExtraChooseCandidateKeyReverse() || input.IsSpace() ||
          input.IsPageDown() || input.IsPageUp() || input.IsTab() && Prefs.SpecifyShiftTabKeyBehavior ||
          input.IsTypingVertical && input.IsVerticalTypingOnlyChooseCandidateKey())) {
@@ -296,7 +296,13 @@ public partial class KeyHandler {
 
     // MARK: AbsorbedArrowKey
 
-    if (input.IsAbsorbedArrowKey() || input.IsExtraChooseCandidateKey() || input.IsExtraChooseCandidateKeyReverse())
+    if (input.IsAbsorbedArrowKey() || input.IsExtraChooseCandidateKey() || input.IsExtraChooseCandidateKeyReverse()) {
+      if (input.IsAltHold() && state is InputState.Inputting) {
+        if (input.IsExtraChooseCandidateKey()) 
+          return HandleInlineCandidateRotation(state, false, stateCallback, errorCallback);
+        if (input.IsExtraChooseCandidateKeyReverse()) 
+          return HandleInlineCandidateRotation(state, true, stateCallback, errorCallback);
+      }
       return HandleAbsorbedArrowKey(state, stateCallback, errorCallback);
 
     // MARK: BackSpace
