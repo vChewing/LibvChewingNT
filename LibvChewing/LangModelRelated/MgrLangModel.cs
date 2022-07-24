@@ -77,5 +77,9 @@ public partial struct MgrLangModel {
                                                   ".dat";
   public static string UserOverrideModelDataURL() => UserDataPath + Slash() + "override-model-data" +
                                                      InputModeFileNameSuffix() + ".dat";
+
+  // MARK: LM Handling Functions.
+
+  public static void SaveUserOverrideModelData() {}
 }
 }

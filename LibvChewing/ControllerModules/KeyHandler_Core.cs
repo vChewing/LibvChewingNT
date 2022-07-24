@@ -175,7 +175,8 @@ public partial class KeyHandler {
         Tools.PrintDebugIntel("UOM: Start Observation.");
         // 令半衰記憶模組觀測給定的三元圖。
         // 這個過程會讓半衰引擎根據當前上下文生成三元圖索引鍵。
-        currentUOM.Observe(walkedAnchors, adjustedIndex, theCandidate.Value, DateTime.Now.Ticks);
+        currentUOM.Observe(walkedAnchors, adjustedIndex, theCandidate.Value, DateTime.Now.Ticks,
+                           _ => MgrLangModel.SaveUserOverrideModelData());
       }
     }
     // 開始爬軌。
@@ -244,7 +245,8 @@ public partial class KeyHandler {
   /// </summary>
   /// <returns>一個單元圖陣列。</returns>
   private List<Unigram> FetchSuggestedCandidates() => currentUOM.Suggest(walkedAnchors, compositor.Cursor,
-                                                                         DateTime.Now.Ticks);
+                                                                         DateTime.Now.Ticks,
+                                                                         _ => MgrLangModel.SaveUserOverrideModelData());
 
   /// <summary>
   /// 向半衰引擎詢問可能的選字建議、且套用給組字器內的當前游標位置。

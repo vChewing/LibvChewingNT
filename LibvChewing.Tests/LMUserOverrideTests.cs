@@ -61,28 +61,31 @@ public class LMUserOverrideTests {
     string strResult = " - 拿到不同的建議結果：";
 
     // 有些詞需要觀測兩遍才會被建議。
-    uom.Observe(walked, theCompositor.Cursor, "獎金", DateTime.Now.Ticks);
-    uom.Observe(walked, theCompositor.Cursor, "獎金", DateTime.Now.Ticks);
+    uom.Observe(walked, theCompositor.Cursor, "獎金", DateTime.Now.Ticks, b => {});
+    uom.Observe(walked, theCompositor.Cursor, "獎金", DateTime.Now.Ticks, b => {});
     List<Unigram> arrResult =
-        uom.Suggest(walkedAnchors: walked, cursorIndex: theCompositor.Cursor, timestamp: DateTime.Now.Ticks);
+        uom.Suggest(walkedAnchors: walked, cursorIndex: theCompositor.Cursor, timestamp: DateTime.Now.Ticks, b => {});
     strResult += arrResult.Aggregate("", (current, neta) => current + " " + neta.KeyValue.Value);
     foreach (Unigram unigram in arrResult) Console.WriteLine(unigram);
 
     theCompositor.Cursor = 2;
-    uom.Observe(walked, theCompositor.Cursor, "高科技", DateTime.Now.Ticks);
-    arrResult = uom.Suggest(walkedAnchors: walked, cursorIndex: theCompositor.Cursor, timestamp: DateTime.Now.Ticks);
+    uom.Observe(walked, theCompositor.Cursor, "高科技", DateTime.Now.Ticks, b => {});
+    arrResult =
+        uom.Suggest(walkedAnchors: walked, cursorIndex: theCompositor.Cursor, timestamp: DateTime.Now.Ticks, b => {});
     strResult += arrResult.Aggregate("", (current, neta) => current + " " + neta.KeyValue.Value);
     foreach (Unigram unigram in arrResult) Console.WriteLine(unigram);
 
     theCompositor.Cursor = 4;
-    uom.Observe(walked, theCompositor.Cursor, "公司", DateTime.Now.Ticks);
-    arrResult = uom.Suggest(walkedAnchors: walked, cursorIndex: theCompositor.Cursor, timestamp: DateTime.Now.Ticks);
+    uom.Observe(walked, theCompositor.Cursor, "公司", DateTime.Now.Ticks, b => {});
+    arrResult =
+        uom.Suggest(walkedAnchors: walked, cursorIndex: theCompositor.Cursor, timestamp: DateTime.Now.Ticks, b => {});
     strResult += arrResult.Aggregate("", (current, neta) => current + " " + neta.KeyValue.Value);
     foreach (Unigram unigram in arrResult) Console.WriteLine(unigram);
 
     theCompositor.Cursor = 7;
-    uom.Observe(walked, theCompositor.Cursor, "年終", DateTime.Now.Ticks);
-    arrResult = uom.Suggest(walkedAnchors: walked, cursorIndex: theCompositor.Cursor, timestamp: DateTime.Now.Ticks);
+    uom.Observe(walked, theCompositor.Cursor, "年終", DateTime.Now.Ticks, b => {});
+    arrResult =
+        uom.Suggest(walkedAnchors: walked, cursorIndex: theCompositor.Cursor, timestamp: DateTime.Now.Ticks, b => {});
     strResult += arrResult.Aggregate("", (current, neta) => current + " " + neta.KeyValue.Value);
     foreach (Unigram unigram in arrResult) Console.WriteLine(unigram);
 

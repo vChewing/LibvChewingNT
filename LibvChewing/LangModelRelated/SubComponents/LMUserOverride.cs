@@ -37,15 +37,17 @@ public class LMUserOverride {
     _capacity = Math.Max(1, capacity);
     _decayExponent = Math.Log(0.5) / decayConstant;
   }
-  public void Observe(List<NodeAnchor> walkedAnchors, int cursorIndex, string candidate, double timestamp) {
+  public void Observe(List<NodeAnchor> walkedAnchors, int cursorIndex, string candidate, double timestamp,
+                      Action<bool> saveCallback) {
     string key = ConvertKeyFrom(walkedAnchors, cursorIndex);
     if (_LRUMap.ContainsKey(key)) {
-      Suggest(walkedAnchors, cursorIndex, timestamp, delegate(bool shouldUpdate) {
-        if (!shouldUpdate) return;
-        _LRUMap[key].Observation.Update(candidate, timestamp);
-        _LRUList.AddFirst(_LRUMap[key]);
-        if (ShowDebugOutput) Console.WriteLine($"UOM: Observation finished with existing observation: {key}");
-      });
+      Suggest(walkedAnchors, cursorIndex, timestamp,
+              _ => {
+                _LRUMap[key].Observation.Update(candidate, timestamp);
+                _LRUList.AddFirst(_LRUMap[key]);
+                if (ShowDebugOutput) Console.WriteLine($"UOM: Observation finished with existing observation: {key}");
+                saveCallback(true);
+              });
     } else {
       Observation observation = new();
       observation.Update(candidate, timestamp);
@@ -57,11 +59,12 @@ public class LMUserOverride {
         _LRUList.RemoveLast();
       }
       if (ShowDebugOutput) Console.WriteLine($"UOM: Observation finished with new observation: {key}");
+      saveCallback(true);
     }
   }
 
   public List<Unigram> Suggest(List<NodeAnchor> walkedAnchors, int cursorIndex, double timestamp,
-                               Action<bool> decayCallback = null) {
+                               Action<bool> decayCallback) {
     string key = ConvertKeyFrom(walkedAnchors, cursorIndex);
     string currentReadingKey = ConvertKeyFrom(walkedAnchors, cursorIndex, readingOnly: true);
     if (!_LRUMap.ContainsKey(key)) {
