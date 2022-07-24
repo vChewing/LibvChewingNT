@@ -149,7 +149,7 @@ public partial class KeyHandler {
   /// 然後再將對應的節錨內的節點標記為「已經手動選字過」。
   /// </summary>
   /// <param name="value">給定之候選字字串。</param>
-  /// <param name="respectCursorPushing">若該選項為 true，則會在選字之後始終將游標推送至選字厚的節錨的前方。</param>
+  /// <param name="respectCursorPushing">若該選項為 true，則會在選字之後始終將游標推送至選字後的節錨的前方。</param>
   private void FixNode((string, string)candidate, bool respectCursorPushing = true) {
     KeyValuePaired theCandidate = new(key: candidate.Item1, value: candidate.Item2);
     int adjustedIndex =
@@ -181,7 +181,7 @@ public partial class KeyHandler {
     // 開始爬軌。
     Walk();
 
-    // 若偏好設定內啟用了相關選項，則會在選字之後始終將游標推送至選字厚的節錨的前方。
+    // 若偏好設定內啟用了相關選項，則會在選字之後始終將游標推送至選字後的節錨的前方。
     if (!respectCursorPushing || !Prefs.MoveCursorAfterSelectingCandidate) return;
     compositor.JumpCursorBySpan(Compositor.TypingDirection.ToFront);
   }
