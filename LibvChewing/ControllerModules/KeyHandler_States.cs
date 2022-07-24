@@ -83,7 +83,8 @@ public partial class KeyHandler {
             // 這裡先計算一下要用在工具提示當中的顯示參數的內容。
             switch (compositor.Cursor) {
               case var n when n >= compositor.Readings.Count:
-                tooltipParameterRef[0] = compositor.Readings[^1];
+                // 這裡的 compositor.cursor 數值不可能大於 readings.count，因為會被 Megrez 自動糾正。
+                tooltipParameterRef[0] = compositor.Readings[compositor.Cursor - 1];
                 break;
               case 0:
                 tooltipParameterRef[1] = compositor.Readings[compositor.Cursor];
