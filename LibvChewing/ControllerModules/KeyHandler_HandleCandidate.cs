@@ -213,6 +213,7 @@ public partial class KeyHandler {
       } else {
         ctlCandidateCurrent.SelectedCandidatedIndex = 0;
       }
+      return true;
     }
 
     // MARK: End Key
@@ -236,6 +237,7 @@ public partial class KeyHandler {
       } else {
         ctlCandidateCurrent.SelectedCandidatedIndex = candidates.Count - 1;
       }
+      return true;
     }
 
     // MARK: 聯想詞處理 (Associated Phrases)
