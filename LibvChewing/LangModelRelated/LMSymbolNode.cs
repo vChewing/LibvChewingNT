@@ -29,6 +29,7 @@ namespace LibvChewing {
 public class SymbolNode {
   public string Title;
   public List<SymbolNode>? Children;
+  public SymbolNode? Previous;
 
   public SymbolNode(string title, List<SymbolNode>? children = null) {
     Title = title;

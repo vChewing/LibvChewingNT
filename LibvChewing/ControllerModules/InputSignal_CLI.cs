@@ -27,10 +27,10 @@ public class InputSignalCLI : InputSignalProtocol {
   public bool IsTypingVertical { get; set; }
   public string InputText { get; set; }
   public string InputTextIgnoringModifiers() {
-    return Key switch { ConsoleKey.D0 => "0", ConsoleKey.D1 => "1", ConsoleKey.D2 => "2", ConsoleKey.D3 => "3",
-                        ConsoleKey.D4 => "4", ConsoleKey.D5 => "5", ConsoleKey.D6 => "6", ConsoleKey.D7 => "7",
-                        ConsoleKey.D8 => "8", ConsoleKey.D9 => "9",
-                        _ => InputText };
+    return Key switch { ConsoleKey.D0 => "0",    ConsoleKey.D1 => "1", ConsoleKey.D2 => "2", ConsoleKey.D3 => "3",
+                        ConsoleKey.D4 => "4",    ConsoleKey.D5 => "5", ConsoleKey.D6 => "6", ConsoleKey.D7 => "7",
+                        ConsoleKey.D8 => "8",    ConsoleKey.D9 => "9",
+                        _ => InputText.ToLower() };
   }
   public ushort CharCode { get; set; }
   public ushort KeyCode { get; set; }
@@ -42,18 +42,14 @@ public class InputSignalCLI : InputSignalProtocol {
                                   Flags.HasFlag(ConsoleModifiers.Control);
   private ConsoleKey cursorForwardKey = ConsoleKey.NoName;
   private ConsoleKey cursorBackwardKey = ConsoleKey.NoName;
-  private ConsoleKey extraChooseCandidateKey = ConsoleKey.NoName;
-  private ConsoleKey extraChooseCandidateKeyReverse = ConsoleKey.NoName;
-  private ConsoleKey absorbedArrowKey = ConsoleKey.NoName;
-  private ConsoleKey verticalTypingOnlyChooseCandidateKey = ConsoleKey.NoName;
+  private ConsoleKey cursorKeyClockRight = ConsoleKey.NoName;
+  private ConsoleKey cursorKeyClockLeft = ConsoleKey.NoName;
 
   private void DefineArrowKeys() {
     cursorForwardKey = IsTypingVertical ? ConsoleKey.DownArrow : ConsoleKey.RightArrow;
     cursorBackwardKey = IsTypingVertical ? ConsoleKey.UpArrow : ConsoleKey.LeftArrow;
-    extraChooseCandidateKey = IsTypingVertical ? ConsoleKey.LeftArrow : ConsoleKey.DownArrow;
-    extraChooseCandidateKeyReverse = IsTypingVertical ? ConsoleKey.RightArrow : ConsoleKey.UpArrow;
-    absorbedArrowKey = IsTypingVertical ? ConsoleKey.RightArrow : ConsoleKey.UpArrow;
-    verticalTypingOnlyChooseCandidateKey = IsTypingVertical ? absorbedArrowKey : ConsoleKey.NoName;
+    cursorKeyClockRight = IsTypingVertical ? ConsoleKey.LeftArrow : ConsoleKey.DownArrow;
+    cursorKeyClockLeft = IsTypingVertical ? ConsoleKey.RightArrow : ConsoleKey.UpArrow;
   }
 
   public InputSignalCLI(string inputText, ConsoleKey keyCode, ushort charCode, ConsoleModifiers? flags,
@@ -101,12 +97,25 @@ public class InputSignalCLI : InputSignalProtocol {
   public bool IsAltHold() => Flags.HasFlag(ConsoleModifiers.Alt);
   public bool IsAltHotKey() => Flags.HasFlag(ConsoleModifiers.Alt) && IsLetter();
   public bool IsCapsLockOn() => char.IsUpper(TheChar);
-  public bool IsNumericPad() {
+  public bool IsNumericPadKey() {
     ConsoleKey[] numPadKeys = { ConsoleKey.NumPad0, ConsoleKey.NumPad1, ConsoleKey.NumPad2,  ConsoleKey.NumPad3,
                                 ConsoleKey.NumPad4, ConsoleKey.NumPad5, ConsoleKey.NumPad6,  ConsoleKey.NumPad7,
                                 ConsoleKey.NumPad8, ConsoleKey.NumPad9, ConsoleKey.Multiply, ConsoleKey.Subtract,
                                 ConsoleKey.Decimal, ConsoleKey.Divide,  ConsoleKey.Add };
     return numPadKeys.Contains(Key);
+  }
+  public bool IsNonLaptopFunctionKey() {
+    ConsoleKey[] nonLaptopFunctionKeys = { ConsoleKey.DownArrow, ConsoleKey.LeftArrow,   ConsoleKey.RightArrow,
+                                           ConsoleKey.UpArrow,   ConsoleKey.PrintScreen, ConsoleKey.Pause,
+                                           ConsoleKey.Insert,    ConsoleKey.Delete,      ConsoleKey.Home,
+                                           ConsoleKey.End,       ConsoleKey.PageUp,      ConsoleKey.PageDown };
+    return nonLaptopFunctionKeys.Contains(Key);
+  }
+
+  public bool IsMainAreaNumKey() {
+    ConsoleKey[] mainAreaNumKeys = { ConsoleKey.D0, ConsoleKey.D1, ConsoleKey.D2, ConsoleKey.D3, ConsoleKey.D4,
+                                     ConsoleKey.D5, ConsoleKey.D6, ConsoleKey.D7, ConsoleKey.D8, ConsoleKey.D9 };
+    return mainAreaNumKeys.Contains(Key);
   }
   public bool IsTab() => Key is ConsoleKey.Tab;
   public bool IsEnter() => Key is ConsoleKey.Enter;
@@ -124,11 +133,9 @@ public class InputSignalCLI : InputSignalProtocol {
   public bool IsDelete() => Key is ConsoleKey.Delete;
   public bool IsCursorBackward() => Key == cursorBackwardKey;
   public bool IsCursorForward() => Key == cursorForwardKey;
-  public bool IsAbsorbedArrowKey() => Key == absorbedArrowKey;
-  public bool IsExtraChooseCandidateKey() => Key == extraChooseCandidateKey;
-  public bool IsExtraChooseCandidateKeyReverse() => Key == extraChooseCandidateKeyReverse;
-  public bool IsVerticalTypingOnlyChooseCandidateKey() => Key == verticalTypingOnlyChooseCandidateKey;
-  public bool IsSymbolMenuPhysicalKey() => TheChar is '`';
+  public bool IsCursorClockRight() => Key == cursorKeyClockRight;
+  public bool IsCursorClockLeft() => Key == cursorKeyClockLeft;
+  public bool IsSymbolMenuPhysicalKey() => TheChar is '`' || TheChar is '_' && !IsShiftHold();
 }
 
 }

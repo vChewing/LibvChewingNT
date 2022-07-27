@@ -39,7 +39,8 @@ public interface InputSignalProtocol {
   public bool IsAltHold();
   public bool IsAltHotKey();
   public bool IsCapsLockOn();
-  public bool IsNumericPad();
+  public bool IsNumericPadKey();
+  public bool IsNonLaptopFunctionKey();
   public bool IsTab();
   public bool IsEnter();
   public bool IsUp();
@@ -56,10 +57,9 @@ public interface InputSignalProtocol {
   public bool IsDelete();
   public bool IsCursorBackward();
   public bool IsCursorForward();
-  public bool IsAbsorbedArrowKey();
-  public bool IsExtraChooseCandidateKey();
-  public bool IsExtraChooseCandidateKeyReverse();
-  public bool IsVerticalTypingOnlyChooseCandidateKey();
+  public bool IsCursorClockRight();
+  public bool IsCursorClockLeft();
   public bool IsSymbolMenuPhysicalKey();
+  public bool IsMainAreaNumKey();
 }
 }

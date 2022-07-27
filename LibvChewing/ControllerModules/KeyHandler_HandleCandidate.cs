@@ -55,10 +55,14 @@ public partial class KeyHandler {
         // 否則，一個本不該出現的真空組字緩衝區會使前後方向鍵與 BackSpace 鍵失靈。
         // 所以這裡需要對 isCompositorEmpty 做判定。
         Clear();
-        stateCallback(new InputState.EmptyIgnorePreviousState());
+        stateCallback(new InputState.EmptyIgnoringPreviousState());
       } else {
         stateCallback(BuildInputtingState());
       }
+      if (state is not InputState.SymbolTable symbolState) return true;
+      SymbolNode? nodePreviousNullable = symbolState.Node.Previous;
+      if (nodePreviousNullable is not {} nodePrevious) return true;
+      stateCallback(new InputState.SymbolTable(nodePrevious, symbolState.IsTypingVertical));
       return true;
     }
 
@@ -67,7 +71,7 @@ public partial class KeyHandler {
     if (input.IsEnter()) {
       if (state is InputState.AssociatedPhrases && !Prefs.AlsoConfirmAssociatedCandidatesByEnter) {
         Clear();
-        stateCallback(new InputState.EmptyIgnorePreviousState());
+        stateCallback(new InputState.EmptyIgnoringPreviousState());
         return true;
       }
       theDelegate?.KeyHandler(this, ctlCandidateCurrent.SelectedCandidatedIndex, ctlCandidateCurrent);
@@ -305,7 +309,7 @@ public partial class KeyHandler {
         if (candidateIndex == int.MaxValue || theDelegate == null) return true;
         theDelegate.KeyHandler(this, candidateIndex, ctlCandidateCurrent);
         Clear();
-        InputState.EmptyIgnorePreviousState empty = new();
+        InputState.EmptyIgnoringPreviousState empty = new();
         stateCallback(empty);
         return Handle(input, empty, stateCallback, errorCallback);
       }

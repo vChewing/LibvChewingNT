@@ -395,7 +395,7 @@ public partial class KeyHandler {
       composer.DoBackSpace();
     }
 
-    stateCallback(composer.IsEmpty && compositor.IsEmpty ? new InputState.EmptyIgnorePreviousState()
+    stateCallback(composer.IsEmpty && compositor.IsEmpty ? new InputState.EmptyIgnoringPreviousState()
                                                          : BuildInputtingState());
     return true;
   }
@@ -430,7 +430,7 @@ public partial class KeyHandler {
     compositor.DropReading(Compositor.TypingDirection.ToFront);
     Walk();
     InputState.Inputting inputting = BuildInputtingState();
-    stateCallback(string.IsNullOrEmpty(inputting.ComposingBuffer) ? new InputState.EmptyIgnorePreviousState()
+    stateCallback(string.IsNullOrEmpty(inputting.ComposingBuffer) ? new InputState.EmptyIgnoringPreviousState()
                                                                   : inputting);
     return true;
   }
@@ -444,8 +444,8 @@ public partial class KeyHandler {
   /// <param name="stateCallback">狀態回呼。</param>
   /// <param name="errorCallback">錯誤回呼。</param>
   /// <returns>將按鍵行為「是否有處理掉」藉由 ctlInputMethod 回報給 IMK。</returns>
-  private bool HandleAbsorbedArrowKey(InputStateProtocol state, Action<InputStateProtocol> stateCallback,
-                                      Action<Error> errorCallback) {
+  private bool HandleClockKey(InputStateProtocol state, Action<InputStateProtocol> stateCallback,
+                              Action<Error> errorCallback) {
     if (state is not InputState.Inputting) return false;
     if (!composer.IsEmpty) {
       Tools.PrintDebugIntel("9B6F908D");
@@ -534,12 +534,12 @@ public partial class KeyHandler {
       // 若啟用了該選項，則清空組字器的內容與注拼槽的內容。
       // 此乃 macOS 內建注音輸入法預設之行為，但不太受 Windows 使用者群體之待見。
       Clear();
-      stateCallback(new InputState.EmptyIgnorePreviousState());
+      stateCallback(new InputState.EmptyIgnoringPreviousState());
     } else {
       // 如果注拼槽不是空的話，則清空之。
       if (composer.IsEmpty) return true;
       composer.Clear();
-      stateCallback(compositor.IsEmpty ? new InputState.EmptyIgnorePreviousState() : BuildInputtingState());
+      stateCallback(compositor.IsEmpty ? new InputState.EmptyIgnoringPreviousState() : BuildInputtingState());
     }
 
     return true;

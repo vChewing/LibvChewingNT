@@ -50,7 +50,7 @@ public partial class KeyHandler {
     // 提前過濾掉一些不合規的按鍵訊號輸入，免得相關按鍵訊號被送給 Megrez 引發輸入法崩潰。
     if (input.IsInvalidInput()) {
       // 在「.Empty(IgnoringPreviousState) 與 .Deactivated」狀態下的首次不合規按鍵輸入可以直接放行。
-      // 因為「.EmptyIgnorePreviousState」會在處理之後被自動轉為「.Empty」，所以不需要單獨判斷。
+      // 因為「.EmptyIgnoringPreviousState」會在處理之後被自動轉為「.Empty」，所以不需要單獨判斷。
       if (state is InputState.Empty or InputState.Deactivated) return false;
       Tools.PrintDebugIntel("550BCF7B: KeyHandler just refused an invalid input.");
       errorCallback(Error.OfNormal);
@@ -60,7 +60,7 @@ public partial class KeyHandler {
 
     // 如果當前組字器為空的話，就不再攔截某些修飾鍵，畢竟這些鍵可能會會用來觸發某些功能。
     bool isFunctionKey =
-        input.IsControlHotKey() || input.IsAltHotKey() || input.IsCommandHold() || input.IsNumericPad();
+        input.IsControlHotKey() || input.IsAltHotKey() || input.IsCommandHold() || input.IsNumericPadKey();
     if (state is not InputState.NotEmpty && state is not InputState.AssociatedPhrases && isFunctionKey) return false;
 
     // MARK: Caps Lock processing.
@@ -70,8 +70,8 @@ public partial class KeyHandler {
     // 心的瀏覽器會讓 IMK 無法徹底攔截對 Shift 鍵的單擊行為、導致這個模式的使用體驗非常糟
     // 糕，故僅保留以 Caps Lock 驅動的英數模式。
     // 要是拿來用於 Windows 輸入法開發的話，則該模式可以考慮用來製作成用 Shift 切換的英文模式。
-    if (input.IsBackSpace() || input.IsEnter() || input.IsAbsorbedArrowKey() || input.IsExtraChooseCandidateKey() ||
-        input.IsExtraChooseCandidateKeyReverse() || input.IsCursorForward() || input.IsCursorBackward()) {
+    if (input.IsBackSpace() || input.IsEnter() || input.IsCursorClockLeft() || input.IsCursorClockRight() ||
+        input.IsCursorForward() || input.IsCursorBackward()) {
       // 略過對 BackSpace 的處理。
     } else if (input.IsCapsLockOn()) {
       Clear();
@@ -96,7 +96,8 @@ public partial class KeyHandler {
 
     // MARK: 處理數字小鍵盤 (Numeric Pad Processing)
 
-    if (input.IsNumericPad()) {
+    // TODO: 這裡有必要針對當前作業系統做差分處理。
+    if (input.IsNumericPadKey()) {
       if (!input.IsLeft() && !input.IsRight() && !input.IsDown() && !input.IsUp() && !input.IsSpace() &&
           !char.IsControl((char)charCode)) {
         Clear();
@@ -130,105 +131,14 @@ public partial class KeyHandler {
 
     // MARK: 注音按鍵輸入處理 (Handle BPMF Keys)
 
-    bool keyConsumedByReading = false;
-    bool skipPhoneticHandling = input.IsReservedKey() || input.IsControlHold() || input.IsAltHold();
-
-    // 這裡 inputValidityCheck() 是讓注拼槽檢查 charCode 這個 UniChar 是否是合法的注音輸入。
-    // 如果是的話，就將這次傳入的這個按鍵訊號塞入注拼槽內且標記為「keyConsumedByReading」。
-    // 函式 composer.receiveKey() 可以既接收 String 又接收 UniChar。
-    if (skipPhoneticHandling && composer.InputValidityCheck(charCode)) {
-      composer.ReceiveKey(charCode);
-      keyConsumedByReading = true;
-
-      // 沒有調號的話，只需要 updateClientComposingBuffer() 且終止處理（return true）即可。
-      // 有調號的話，則不需要這樣，而是轉而繼續在此之後的處理。
-      if (!composer.HasToneMarker()) {
-        stateCallback(BuildInputtingState());
-        return true;
-      }
-    }
-
-    bool composeReading = composer.HasToneMarker();  // 這裡不需要做排他性判斷。
-
-    // 如果當前的按鍵是 Enter 或 Space 的話，這時就可以取出 composer 內的注音來做檢查了。
-    // 來看看詞庫內到底有沒有對應的讀音索引。這裡用了「|=」判斷處理方式。
-    composeReading |= !composer.IsEmpty && (input.IsSpace() || input.IsEnter());
-    if (composeReading) {
-      // 補上空格，否則倚天忘形與許氏排列某些音無法響應不了陰平聲調。
-      // 小麥注音因為使用 OVMandarin，所以不需要這樣補。但鐵恨引擎對所有聲調一視同仁。
-      if (input.IsSpace() && !composer.HasToneMarker()) composer.ReceiveKey(input: " ");
-      string readingKey = composer.GetComposition();  // 拿取用來進行索引檢索用的注音。
-      // 如果輸入法的辭典索引是漢語拼音的話，要注意上一行拿到的內容得是漢語拼音。
-
-      // 向語言模型詢問是否有對應的記錄。
-      if (!currentLM.HasUnigramsFor(readingKey)) {
-        Tools.PrintDebugIntel($"B49C0979：語彙庫內無「{readingKey}」的匹配記錄。");
-        errorCallback(Error.OfNormal);
-        composer.Clear();
-        // 根據「組字器是否為空」來判定回呼哪一種狀態。
-        stateCallback(compositor.IsEmpty ? new InputState.EmptyIgnorePreviousState() : BuildInputtingState());
-        return true;  // 向 IMK 報告說這個按鍵訊號已經被輸入法攔截處理了。
-      }
-
-      // 將該讀音插入至組字器內的軌格當中。
-      compositor.InsertReading(reading: readingKey);
-
-      // 讓組字器反爬軌格。
-      string textToCommit = CommitOverflownCompositionAndWalk();
-
-      // 看看半衰記憶模組是否會對目前的狀態給出自動選字建議。
-      FetchAndApplySuggestionsFromUserOverrideModel();
-
-      // 將組字器內超出最大動態爬軌範圍的節錨都標記為「已經手動選字過」，減少之後的爬軌運算負擔。
-      MarkNodesFixedIfNecessary();
-
-      // 之後就是更新組字區了。先清空注拼槽的內容。
-      composer.Clear();
-
-      // 再以回呼組字狀態的方式來執行 updateClientComposingBuffer()。
-      InputState.Inputting inputting = BuildInputtingState();
-      inputting.TextToCommit = textToCommit;
-      stateCallback(inputting);
-
-      // 逐字選字模式的處理。
-      if (Prefs.UseSCPCTypingMode) {
-        InputState.ChoosingCandidate choosingCandidates = BuildCandidate(inputting, input.IsTypingVertical);
-        if (choosingCandidates.Candidates.Count == 1) {
-          Clear();
-          string text = choosingCandidates.Candidates[0].Item2;
-          string reading = choosingCandidates.Candidates[0].Item1;
-          stateCallback(new InputState.Committing(textToCommit: text));
-
-          if (!Prefs.AssociatedPhrasesEnabled)
-            stateCallback(new InputState.Empty());
-          else {
-            InputState.AssociatedPhrases associatedPhrases =
-                BuildAssociatePhraseStateWith(new(reading, text), input.IsTypingVertical);
-            stateCallback(associatedPhrases.Candidates.Count > 0 ? associatedPhrases : new InputState.Empty());
-          }
-        } else {
-          stateCallback(choosingCandidates);
-        }
-      }
-      // 將「這個按鍵訊號已經被輸入法攔截處理了」的結果藉由 ctlInputMethod 回報給 IMK。
-      return true;
-    }
-
-    // 如果此時這個選項是 true 的話，可知當前注拼槽輸入了聲調、且上一次按鍵不是聲調按鍵。
-    // 比方說大千傳統佈局敲「6j」會出現「ˊㄨ」但並不會被認為是「ㄨˊ」，因為先輸入的調號
-    // 並非用來確認這個注音的調號。除非是：「ㄨˊ」「ˊㄨˊ」「ˊㄨˇ」「ˊㄨ 」等。
-    if (keyConsumedByReading) {
-      // 以回呼組字狀態的方式來執行 updateClientComposingBuffer()。
-      stateCallback(BuildInputtingState());
-      return true;
-    }
+    bool? compositionHandled = HandleComposition(input, state, stateCallback, errorCallback);
+    if (compositionHandled is {} compositionReallyHandled) return compositionReallyHandled;
 
     // MARK: 用上下左右鍵呼叫選字窗 (Calling candidate window using Up / Down or PageUp / PageDn.)
 
     if (state is InputState.NotEmpty currentState && composer.IsEmpty && !input.IsAltHold() &&
-        (input.IsExtraChooseCandidateKey() || input.IsExtraChooseCandidateKeyReverse() || input.IsSpace() ||
-         input.IsPageDown() || input.IsPageUp() || input.IsTab() && Prefs.SpecifyShiftTabKeyBehavior ||
-         input.IsTypingVertical && input.IsVerticalTypingOnlyChooseCandidateKey())) {
+        (input.IsCursorClockLeft() || input.IsCursorClockRight() || input.IsSpace() || input.IsPageDown() ||
+         input.IsPageUp() || input.IsTab() && Prefs.SpecifyShiftTabKeyBehavior)) {
       if (input.IsSpace()) {
         // 倘若沒有在偏好設定內將 Space 空格鍵設為選字窗呼叫用鍵的話………
         if (!Prefs.ChooseCandidateUsingSpace) {
@@ -295,16 +205,15 @@ public partial class KeyHandler {
     if ((input.IsControlHold() || input.IsShiftHold()) && input.IsAltHold() && input.IsRight())
       return HandleEnd(state, stateCallback, errorCallback);
 
-    // MARK: AbsorbedArrowKey
+    // MARK: Clock-Left & Clock-Right
 
-    if (input.IsAbsorbedArrowKey() || input.IsExtraChooseCandidateKey() || input.IsExtraChooseCandidateKeyReverse()) {
+    if (input.IsCursorClockRight() || input.IsCursorClockLeft()) {
       if (input.IsAltHold() && state is InputState.Inputting) {
-        if (input.IsExtraChooseCandidateKey())
+        if (input.IsCursorClockRight())
           return HandleInlineCandidateRotation(state, false, stateCallback, errorCallback);
-        if (input.IsExtraChooseCandidateKeyReverse())
-          return HandleInlineCandidateRotation(state, true, stateCallback, errorCallback);
+        if (input.IsCursorClockLeft()) return HandleInlineCandidateRotation(state, true, stateCallback, errorCallback);
       }
-      return HandleAbsorbedArrowKey(state, stateCallback, errorCallback);
+      return HandleClockKey(state, stateCallback, errorCallback);
     }
 
     // MARK: BackSpace
@@ -350,6 +259,27 @@ public partial class KeyHandler {
         // 這裡不需要該函式所傳回的 bool 結果，所以用「_ =」解消掉。
         _ = HandleEnter(state, stateCallback);
         stateCallback(new InputState.SymbolTable(SymbolNode.Root, input.IsTypingVertical));
+        return true;
+      }
+    }
+
+    // MARK: 全形/半形阿拉伯數字輸入 (FW / HW Arabic Numbers Input)
+
+    if (state is InputState.Empty) {
+      if (input.IsMainAreaNumKey() && input.IsShiftHold() && input.IsAltHold() && !input.IsControlHold() &&
+          !input.IsCommandHold()) {
+        string stringRAW = input.InputText;
+        char[] c = stringRAW.ToCharArray();
+        for (int i = 0; i < c.Length; i++) {
+          if (c[i] == 32) {
+            c[i] = (char)12288;
+            continue;
+          }
+          if (c[i] < 127) c[i] = (char)(c[i] + 65248);
+        }
+        if (Prefs.HalfWidthPunctuationEnabled) stringRAW = new(c);
+        stateCallback(new InputState.Committing(textToCommit: stringRAW));
+        stateCallback(new InputState.Empty());
         return true;
       }
     }

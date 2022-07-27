@@ -52,7 +52,7 @@ public interface InputStateProtocol {
 ///   組字區內存入任何東西，所以該狀態不受 .NotEmpty 的管轄。<br />
 /// - .Empty: 使用者剛剛切換至該輸入法、卻還沒有任何輸入行為。抑或是剛剛敲字遞交給
 ///   客體應用、準備新的輸入行為。<br />
-/// - .EmptyIgnorePreviousState: 與 Empty 類似，但會扔掉上一個狀態的內容、不將這些
+/// - .EmptyIgnoringPreviousState: 與 Empty 類似，但會扔掉上一個狀態的內容、不將這些
 ///   內容遞交給客體應用。該狀態在處理完畢之後會被立刻切換至 .Empty()。<br />
 /// - .Committing: 該狀態會承載要遞交出去的內容，讓輸入法控制器處理時代為遞交。<br />
 /// - .NotEmpty: 非空狀態，是一種狀態大類、用以派生且代表下述諸狀態。<br />
@@ -70,7 +70,7 @@ public struct InputState {
     OfDeactivated,
     OfAssociatedPhrases,
     OfEmpty,
-    OfEmptyIgnorePreviousState,
+    OfEmptyIgnoringPreviousState,
     OfCommitting,
     OfNotEmpty,
     OfInputting,
@@ -102,15 +102,15 @@ public struct InputState {
     public override string ToString() => "<InputState.Empty>";
   }
 
-  // MARK: - InputState.EmptyIgnorePreviousState
+  // MARK: - InputState.EmptyIgnoringPreviousState
 
   /// <summary>
-  /// .EmptyIgnorePreviousState: 與 Empty 類似，<br />
+  /// .EmptyIgnoringPreviousState: 與 Empty 類似，<br />
   /// 但會扔掉上一個狀態的內容、不將這些內容遞交給客體應用。<br />
   /// 該狀態在處理完畢之後會被立刻切換至 .Empty()。
   /// </summary>
-  public partial class EmptyIgnorePreviousState : Empty {
-    public override Type Type => Type.OfEmptyIgnorePreviousState;
+  public partial class EmptyIgnoringPreviousState : Empty {
+    public override Type Type => Type.OfEmptyIgnoringPreviousState;
     public override string ToString() => "<InputState.EmptyIgnoringPreviousState>";
   }
 
@@ -269,9 +269,10 @@ public struct InputState {
       }
       return arrCandidateResults.Select(neta => ("", neta)).ToList();
     }
-    public SymbolTable(SymbolNode node, bool isTypingVertical)
+    public SymbolTable(SymbolNode node, bool isTypingVertical, SymbolNode? previous = null)
         : base("", 0, GenerateCandidates(node), isTypingVertical) {
       Node = node;
+      if (previous is {} previousNode) Node.Previous = previousNode;
     }
     public override string ToString() =>
         $"<InputState.ChoosingCandidate, Candidates:{Candidates}, IsTypingVertical:{IsTypingVertical}>";
